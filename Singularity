@@ -38,10 +38,10 @@ From: ubuntu
     ## Call your planner.
     /src/fast-downward.py \
         --plan-file $PLANFILE \
-        --portfolio /src/driver/portfolios/seq_opt_ds.py \
+        --portfolio /src/driver/portfolios/seq_sat_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE \
-        --preprocess-options --h2-time-limit 120
+        --preprocess-options --h2-time-limit 30
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
