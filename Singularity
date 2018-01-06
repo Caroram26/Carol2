@@ -24,7 +24,7 @@ From: ubuntu
     apt-get -y install g++ make python
 
     ## Build your planner
-    cd /src
+    cd /planner/src
     ./build_all -j4
 
 %runscript
@@ -36,9 +36,9 @@ From: ubuntu
     PLANFILE=$3
 
     ## Call your planner.
-    /src/fast-downward.py \
+    /planner/src/fast-downward.py \
         --plan-file $PLANFILE \
-        --portfolio /src/driver/portfolios/seq_sat_ds.py \
+        --portfolio /planner/src/driver/portfolios/seq_sat_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE \
         --preprocess-options --h2-time-limit 30
