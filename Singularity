@@ -24,7 +24,7 @@ From: ubuntu
     apt-get -y install g++ make python
 
     ## Build your planner
-    cd /src
+    cd /planner/src
     ./build_all -j4
 
 %runscript
@@ -36,9 +36,9 @@ From: ubuntu
     PLANFILE=$3
 
     ## Call your planner.
-    /src/fast-downward.py \
+    /planner/src/fast-downward.py \
         --plan-file $PLANFILE \
-        --portfolio /src/driver/portfolios/seq_agl_ds.py \
+        --portfolio /planner/src/driver/portfolios/seq_agl_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE
 
@@ -46,7 +46,7 @@ From: ubuntu
 ## Please use the same field names and use only one line for each value.
 %labels
 Name        DecSTer
-Description portfolio including decoupled search as a main planner
+Description portfolio including decoupled search as a main component
 Authors     Daniel Gnad <gnad@cs.uni-saarland.de> and Alexander Shleyfman <shleyfman.alexander@gmail.com> and Joerg Hoffmann <hoffmann@cs.uni-saarland.de>
 SupportsDerivedPredicates no
 SupportsQuantifiedPreconditions no
