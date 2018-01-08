@@ -112,12 +112,13 @@ void LazySearch::generate_successors() {
         int new_g = current_g + get_adjusted_cost(*operators[i]);
         int new_real_g = current_real_g + operators[i]->get_cost();
         bool is_preferred = operators[i]->is_marked();
-        if (is_preferred)
+        if (is_preferred){
             operators[i]->unmark();
+        }
         if (new_real_g < bound) {
             open_list->evaluate(new_g, is_preferred);
             open_list->insert(
-                make_pair(current_state.get_id(), operators[i]));
+                    make_pair(current_state.get_id(), operators[i]));
         }
     }
 }

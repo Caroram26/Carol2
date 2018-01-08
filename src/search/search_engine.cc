@@ -21,6 +21,7 @@ SearchEngine::SearchEngine(const Options &opts)
       solution_found(false),
       cheapest_goal_state(StateID::no_state),
       search_space(OperatorCost(opts.get_enum("cost_type"))),
+      cheapest_plan_cost(numeric_limits<int>::max()),
       cost_type(OperatorCost(opts.get_enum("cost_type"))),
       max_time(opts.get<double>("max_time")) {
     if (opts.get<int>("bound") < 0) {
@@ -113,12 +114,12 @@ bool SearchEngine::check_goal_and_set_plan(const State &state) {
             } else if (g_factoring->get_search_type() == ASDA){
                 if (is_optimal_leaf_plan(state, *cpg)){
                     solution_found = true;
-                    bound = solution_cost;
+                    cheapest_plan_cost = solution_cost;
                     cheapest_goal_state = state.get_id();
                 } else {
-                    if (bound > solution_cost){
+                    if (cheapest_plan_cost > solution_cost){
                         solution_found = true;
-                        bound = solution_cost;
+                        cheapest_plan_cost = solution_cost;
                         cheapest_goal_state = state.get_id();
                     }                    
                     cout << ", not leaf-optimal => continue search [t=" << g_timer << "]" << endl;                            
@@ -127,10 +128,10 @@ bool SearchEngine::check_goal_and_set_plan(const State &state) {
             } else if (g_factoring->get_search_type() == SDA){
                 if (!found_solution()){
                     solution_found = true;
-                    bound = solution_cost;
+                    cheapest_plan_cost = solution_cost;
                     cheapest_goal_state = state.get_id();
-                } else if (solution_cost < bound){
-                    bound = solution_cost;
+                } else if (solution_cost < cheapest_plan_cost){
+                    cheapest_plan_cost = solution_cost;
                     cheapest_goal_state = state.get_id();
                 }
                 cout << " [t=" << g_timer << "]" << endl;
@@ -138,10 +139,10 @@ bool SearchEngine::check_goal_and_set_plan(const State &state) {
             }
             cout << " [t=" << g_timer << "]" << endl;
             return true;
-	}
-	Plan plan;
+        }
+        Plan plan;
         search_space.trace_path(state, plan);
-	cout << "Solution found!" << endl;
+        cout << "Solution found!" << endl;
         set_plan(plan);
         return true;
     }
@@ -183,6 +184,14 @@ void SearchEngine::save_plan_if_necessary() const {
     if (found_solution()){
         if (g_factoring){
             search_space.trace_path(g_state_registry->lookup_state(cheapest_goal_state), plan);
+            if (bound < numeric_limits<int>::max() && calculate_plan_cost(plan) >= bound){
+                // if bound is set and found plan has higher cost => don't save
+                // TODO why don't we check this already when the goal state was found?
+                // we could then continue search and check if another goal state is found
+                // with cheaper cost. since this only happens for non-optimal configurations
+                // we have no way of predicting the cost of a plan unless we call trace_path.
+                return;
+            }
         }
         save_plan(get_plan(), false);
     }
