@@ -34,11 +34,12 @@ From: ubuntu
     DOMAINFILE=$1
     PROBLEMFILE=$2
     PLANFILE=$3
+    COST_BOUND=$4
 
     ## Call your planner.
     /planner/src/fast-downward.py \
         --plan-file $PLANFILE \
-        --portfolio /planner/src/driver/portfolios/seq_opt_ds.py \
+        --portfolio /planner/src/driver/portfolios/seq_bco_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE \
         --preprocess-options --h2-time-limit 120
