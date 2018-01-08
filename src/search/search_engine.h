@@ -22,11 +22,15 @@ private:
     SearchStatus status;
     bool solution_found;
     mutable Plan plan;
+    // this is only used by decoupled search
     StateID cheapest_goal_state;
     bool is_optimal_leaf_plan(const State &state, const CompliantPathGraph &cpg);
 protected:
     SearchSpace search_space;
     SearchProgress search_progress;
+
+    // this is only used by decoupled search
+    int cheapest_plan_cost;
 
     int bound;
     OperatorCost cost_type;
