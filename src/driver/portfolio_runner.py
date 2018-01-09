@@ -231,10 +231,20 @@ def run_sat(configs, executable, sas_file, plan_manager, final_config,
 
 
 def run_opt(configs, executable, sas_file, plan_manager, remaining_time_at_start,
-            memory):
+            memory, planner_args):
     exitcodes = []
+        
     for pos, (relative_time, args) in enumerate(configs):
         timeout = determine_timeout(remaining_time_at_start, configs, pos)
+        if (planner_args.cost_bound is not None):# a bit hacky, for bounded-cost track
+            for index, arg in enumerate(args):
+                if arg == "--search":
+                    search = args[index + 1]
+                    if "bound=BOUND" in search:
+                        search = search.replace("BOUND", str(int(planner_args.cost_bound) + 1))
+                        print("set cost bound to " + str(int(planner_args.cost_bound) + 1))
+                        args[index + 1] = search
+                    break
         exitcode = run_search(executable, args, sas_file, plan_manager, timeout, memory)
         exitcodes.append(exitcode)
 
@@ -291,7 +301,7 @@ def get_portfolio_attributes(portfolio):
     return attributes
 
 
-def run(portfolio, executable, sas_file, plan_manager):
+def run(portfolio, executable, sas_file, plan_manager, args):
     attributes = get_portfolio_attributes(portfolio)
     configs = attributes["CONFIGS"]
     optimal = attributes["OPTIMAL"]
@@ -343,7 +353,7 @@ def run(portfolio, executable, sas_file, plan_manager):
 
     if optimal:
         exitcodes = run_opt(configs, executable, sas_file, plan_manager,
-                            remaining_time_at_start, memory)
+                            remaining_time_at_start, memory, args)
     else:
         exitcodes = run_sat(configs, executable, sas_file, plan_manager,
                             final_config, final_config_builder,

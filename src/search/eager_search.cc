@@ -128,7 +128,7 @@ SearchStatus EagerSearch::step() {
     
     if (g_factoring &&
         g_factoring->get_search_type() == SDA &&
-        node.get_g() + node.get_h() >= bound){
+        node.get_g() + node.get_h() >= cheapest_plan_cost){
         cout << "f-value of to be expanded node (" << node.get_g() + node.get_h()
              << ") is greater/equal to cost of best found plan => goal reached [t=" << g_timer << "]" << endl;
         return SOLVED;
@@ -168,13 +168,18 @@ SearchStatus EagerSearch::step() {
     for (size_t i = 0; i < applicable_ops.size(); ++i) {
         const Operator *op = applicable_ops[i];
 
-	// g-value upper bound pruning for factored search => g_sum_min_goal_cost
-        int goal_cost = g_sum_min_goal_cost;
-        if (g_factoring && g_factoring->get_profile() != FORK){
-            // because g-value might include some goal cost
-            goal_cost = max(0, goal_cost - node.get_leaf_part_g());
+        if (g_factoring){
+            // g-value upper bound pruning for optimal decoupled search => g_sum_min_goal_cost
+            int goal_cost = g_sum_min_goal_cost;
+            if (g_factoring->get_profile() != FORK){
+                // because g-value might include some goal cost
+                goal_cost = max(0, goal_cost - node.get_leaf_part_g());
+            }
+            if ((node.get_g() + get_adjusted_cost(*op) + goal_cost) >= min(bound, cheapest_plan_cost)) {
+                continue;
+            }
         }
-        if ((node.get_g() + get_adjusted_cost(*op) + goal_cost) >= bound) {
+        if ((node.get_g() + get_adjusted_cost(*op)) >= bound) {
             continue;
         }
 
@@ -198,11 +203,13 @@ SearchStatus EagerSearch::step() {
                   evaluation here. We must call reach_state for each
                   heuristic for its side effects.
                 */
-                if (heuristics[j]->reach_state(s, *op, succ_state))
+                if (heuristics[j]->reach_state(s, *op, succ_state)){
                     h_is_dirty = true;
+                }
             }
-            if (h_is_dirty && use_multi_path_dependence)
+            if (h_is_dirty && use_multi_path_dependence){
                 succ_node.set_h_dirty();
+            }
         }
 
         if (succ_node.is_new()) {
@@ -219,7 +226,7 @@ SearchStatus EagerSearch::step() {
             // before having checked that we're not in a dead end. The
             // division of responsibilities is a bit tricky here -- we
             // may want to refactor this later.
-	    open_list->evaluate(node.get_g() + get_adjusted_cost(*op) + g_inc_g_by, is_preferred);
+            open_list->evaluate(node.get_g() + get_adjusted_cost(*op) + g_inc_g_by, is_preferred);
 	    
             bool dead_end = open_list->is_dead_end();
             if (dead_end) {
@@ -301,14 +308,14 @@ SearchStatus EagerSearch::step() {
 
 bool EagerSearch::insert_state(const SearchNode &succ_node) {
     if (!g_factoring || !found_solution()){
-	return true;
+        return true;
     }
-    if (succ_node.get_g() + succ_node.get_h() >= bound){
+    if (succ_node.get_g() + succ_node.get_h() >= cheapest_plan_cost){
         return false;
     }
     // TODO if upper bound pruning is actually pruning a lot of states, runtime decreases
     // dramatically; in instances where not much states are pruned, (similar number of evaluations)
-    // search time is significantly higher with fork-heuristic upper bound pruning
+    // search time is significantly higher with star-heuristic upper bound pruning
     // NOTE overall, it seems to make sense to include the pruning, it reduces evaluations in many
     // instances and is only detrimental in very few cases
     // TODO check if there are any states pruned using hmax
@@ -350,20 +357,20 @@ pair<SearchNode, bool> EagerSearch::fetch_next_node() {
             continue;
         }
         
-        // upper bound pruning for factored search
+        // upper bound pruning for decoupled search
         if (g_factoring && found_solution()){
             int goal_cost = g_sum_min_goal_cost;
             if (g_factoring->get_profile() != FORK){
                 // because g-value might include some goal cost
                 goal_cost = max(0, goal_cost - node.get_leaf_part_g());
             }
-            if ((node.get_g() + max(goal_cost, node.get_h())) >= bound) {
+            if ((node.get_g() + max(goal_cost, node.get_h())) >= cheapest_plan_cost) {
                 continue;
             }
             if (g_factoring->get_search_type() == ASDA && pruning_heuristic != 0){
                 pruning_heuristic->evaluate(s);
                 int fork_h = pruning_heuristic->get_heuristic();
-                if (node.get_g() + fork_h >= bound){
+                if (node.get_g() + fork_h >= cheapest_plan_cost){
                     continue;
                 }
             }
