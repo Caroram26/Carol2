@@ -282,6 +282,9 @@ def parse_args():
     driver_other.add_argument(
         "--portfolio", metavar="FILE",
         help="run a portfolio specified in FILE")
+    driver_other.add_argument(
+        "--cost-bound", action="store",
+        help="passed to portfolios, pre-setting the cost bound. ensures that no plan with cost > cost_bound is saved")
 
     parser.add_argument(
         "planner_args", nargs=argparse.REMAINDER,
