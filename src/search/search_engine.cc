@@ -88,6 +88,22 @@ void SearchEngine::search() {
          << " [t=" << g_timer << "]" << endl;
 }
 
+bool SearchEngine::bounded_cost_solved(int solution_cost, const State &state) {
+    if (bound < numeric_limits<int>::max() && solution_cost < bound){
+        solution_found = true;
+        cheapest_plan_cost = solution_cost;
+        cheapest_goal_state = state.get_id();
+        cout << endl
+                << "found plan has cost lower than given bound ("
+                << bound
+                <<  "), terminating"
+                << " [t=" << g_timer << "]" << endl;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 bool SearchEngine::check_goal_and_set_plan(const State &state) {
     if (test_goal(state)) {
         if (g_factoring){         
@@ -117,6 +133,9 @@ bool SearchEngine::check_goal_and_set_plan(const State &state) {
                     cheapest_plan_cost = solution_cost;
                     cheapest_goal_state = state.get_id();
                 } else {
+                    if (bounded_cost_solved(solution_cost, state)){
+                        return true;
+                    }
                     if (cheapest_plan_cost > solution_cost){
                         solution_found = true;
                         cheapest_plan_cost = solution_cost;
@@ -126,6 +145,9 @@ bool SearchEngine::check_goal_and_set_plan(const State &state) {
                     return false;
                 }
             } else if (g_factoring->get_search_type() == SDA){
+                if (bounded_cost_solved(solution_cost, state)){
+                    return true;
+                }
                 if (!found_solution()){
                     solution_found = true;
                     cheapest_plan_cost = solution_cost;
@@ -190,7 +212,8 @@ void SearchEngine::save_plan_if_necessary() const {
                 // we could then continue search and check if another goal state is found
                 // with cheaper cost. since this only happens for non-optimal configurations
                 // we have no way of predicting the cost of a plan unless we call trace_path.
-                return;
+                cout << "found plan cost exceeds bound, exit" << endl;
+                exit_with(EXIT_UNSOLVED_INCOMPLETE);
             }
         }
         save_plan(get_plan(), false);
