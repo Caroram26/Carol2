@@ -39,6 +39,7 @@ From: ubuntu
     ## Call your planner.
     /planner/src/fast-downward.py \
         --plan-file $PLANFILE \
+        --cost-bound $COST_BOUND \
         --portfolio /planner/src/driver/portfolios/seq_bco_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE \
