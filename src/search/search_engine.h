@@ -25,6 +25,7 @@ private:
     // this is only used by decoupled search
     StateID cheapest_goal_state;
     bool is_optimal_leaf_plan(const State &state, const CompliantPathGraph &cpg);
+    bool bounded_cost_solved(int solution_cost, const State &state);
 protected:
     SearchSpace search_space;
     SearchProgress search_progress;

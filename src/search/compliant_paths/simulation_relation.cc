@@ -272,7 +272,7 @@ void SimulationRelation::compute_simulation(LeafFactorID factor, const Countdown
     }
 
     while (!open.empty()) {
-        cout << g_timer() << endl;
+
         if (timer.is_expired()){
             relation[factor].clear();
             return;
