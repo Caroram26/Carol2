@@ -41,6 +41,7 @@ From: ubuntu
         --portfolio /planner/src/driver/portfolios/seq_agl_ds.py \
         $DOMAINFILE \
         $PROBLEMFILE
+        --preprocess-options --h2-time-limit 10
 
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
