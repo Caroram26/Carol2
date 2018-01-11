@@ -46,7 +46,7 @@ From: ubuntu
 ## Update the following fields with meta data about your submission.
 ## Please use the same field names and use only one line for each value.
 %labels
-Name        DecSTer
+Name        DecSTar
 Description portfolio including decoupled search as a main component
 Authors     Daniel Gnad <gnad@cs.uni-saarland.de> and Alexander Shleyfman <shleyfman.alexander@gmail.com> and Martin Wehrle <mwehrle@informatik.uni-freiburg.de> and Joerg Hoffmann <hoffmann@cs.uni-saarland.de>
 SupportsDerivedPredicates no
