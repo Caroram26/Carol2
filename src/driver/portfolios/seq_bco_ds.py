@@ -39,22 +39,23 @@ CONFIGS = [
            "astar(lmcut, " 
            "      pruning_heuristic=lmcut(search_type=STAR),"
            "      bound=BOUND,"
-           "      pruning=stubborn_sets_decoupled(min_pruning_ratio=0.5, special_case_optimizations=true))"]),
+           "      pruning=stubborn_sets_decoupled(min_pruning_ratio=0.3, special_case_optimizations=true))"]),
     (400, ["--decoupling",
            "portfolio(fallback_on_abstain=false, overwrite_options=true, choose_max_leaves=true, factorings=[fork(search_type=asda, max_leaf_size=10000000), ifork(max_leaf_size=10000000), incarcs(max_leaf_size=1000000)])",
            "--search",
            "astar(lmcut,"
            "      pruning_heuristic=lmcut(search_type=STAR),"
            "      bound=BOUND,"
-           "      pruning=stubborn_sets_decoupled(min_pruning_ratio=0.5, special_case_optimizations=true, use_single_var_ifork_optimization=true),"
+           "      pruning=stubborn_sets_decoupled(min_pruning_ratio=0.3, special_case_optimizations=true, use_single_var_ifork_optimization=true),"
            "      symmetry=symmetry_state_pruning(lex_prices=false, lex_num_states=false, lex_goal_cost=false))"]),
     # optimal base planners
     (120, ["--search",
            "astar(lmcut,"
-           "      pruning=stubborn_sets_ec(min_pruning_ratio=0.5),"
+           "      pruning=stubborn_sets_ec(min_pruning_ratio=0.3),"
            "      symmetry=symmetry_state_pruning)"]),
     (120, ["--search",
-           "astar(gapdb)"]),
+           "astar(gapdb,"
+           "      pruning=stubborn_sets_ec(min_pruning_ratio=0.3))"]),
     (120, ["--search",
            "astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=reverse_level),shrink_strategy=shrink_bisimulation(max_states=200000,greedy=false,group_by_h=true)))"]),
     (120, ["--search",
