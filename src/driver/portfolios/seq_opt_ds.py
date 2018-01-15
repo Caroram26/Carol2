@@ -21,7 +21,8 @@ CONFIGS = [
            "      pruning=stubborn_sets_ec(min_pruning_ratio=0.2),"
            "      symmetry=symmetry_state_pruning)"]),
     (180, ["--search",
-           "astar(gapdb)"]),
+           "astar(gapdb,"
+           "      pruning=stubborn_sets_ec(min_pruning_ratio=0.2))"]),
     (180, ["--search",
            "astar(merge_and_shrink(merge_strategy=merge_linear(variable_order=reverse_level),shrink_strategy=shrink_bisimulation(max_states=200000,greedy=false,group_by_h=true)))"]),
     (180, ["--search",
