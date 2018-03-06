@@ -1,5 +1,5 @@
-#ifndef TASK_UTILS_CAUSAL_GRAPH_H
-#define TASK_UTILS_CAUSAL_GRAPH_H
+#ifndef CAUSAL_GRAPH_H
+#define CAUSAL_GRAPH_H
 
 /*
   TODO: Perform some memory profiling on this class.
@@ -47,15 +47,13 @@
   1 } x S for arbitrary sets S. Our current code only requires that S
   is hashable and sortable, and we have one assertion that checks that
   S = {0, ..., K - 1}. This could easily be changed if such a
-  generalization is useful anywhere in the code.
-*/
+  generalization is useful anywhere in the code. */
 
 #include <vector>
 
-typedef std::vector<std::vector<int>> IntRelation;
+typedef std::vector<std::vector<int> > IntRelation;
 
 
-namespace causal_graph {
 class CausalGraph {
     IntRelation pre_to_eff;
     IntRelation eff_to_pre;
@@ -63,13 +61,9 @@ class CausalGraph {
 
     IntRelation successors;
     IntRelation predecessors;
-
-    void dump() const;
 public:
-    /* Use the factory function get_causal_graph to create causal graphs
-       to avoid creating more than one causal graph per AbstractTask. */
-    explicit CausalGraph();
-    ~CausalGraph() = default;
+    CausalGraph();
+    ~CausalGraph();
 
     /*
       All below methods querying neighbors (of some sort or other) of
@@ -108,11 +102,8 @@ public:
     const std::vector<int> &get_predecessors(int var) const {
         return predecessors[var];
     }
-};
 
-/* Create or retrieve a causal graph from cache. If causal graphs are created
-   with this function, we build at most one causal graph per AbstractTask. */
-extern const CausalGraph &get_causal_graph();
-}
+    void dump() const;
+};
 
 #endif
