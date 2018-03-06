@@ -9,6 +9,7 @@
 #include <vector>
 
 
+class Operator;
 class PathPriceTag;
 
 class SearchNode {    
@@ -40,11 +41,11 @@ public:
 
     void open_initial(int h);
     void open(int h, const SearchNode &parent_node,
-              OperatorID parent_op);
+              const Operator *parent_op);
     void reopen(const SearchNode &parent_node,
-                OperatorID parent_op);
+                const Operator *parent_op);
     void update_parent(const SearchNode &parent_node,
-                       OperatorID parent_op);
+                       const Operator *parent_op);
     void increase_h(int h);
     void close();
     void mark_as_dead_end();
@@ -58,14 +59,14 @@ class SearchSpace {
 
     OperatorCost cost_type;
     
-    void trace_decoupled_path(std::vector<OperatorID> &path,
+    void trace_decoupled_path(std::vector<const Operator*> &path, 
                               std::vector<StateID> &states) const;
     
-    void trace_symmetric_path(std::vector<OperatorID> &path,
+    void trace_symmetric_path(std::vector<const Operator*> &path, 
                               std::vector<StateID> &states, 
                               std::vector<Permutation> &permutations) const;
     
-    void trace_symmetric_path(std::vector<OperatorID> &path,
+    void trace_symmetric_path(std::vector<const Operator*> &path,
                               std::vector<StateID> &states, 
                               std::vector<PathPriceTag> &cpgs,
                               std::vector<std::unique_ptr<DecoupledPermutation> > &permutations) const;
@@ -74,7 +75,7 @@ public:
     SearchSpace(OperatorCost cost_type_);
     SearchNode get_node(const State &state);
     void trace_path(const State &goal_state,
-                    std::vector<OperatorID> &path) const;
+                    std::vector<const Operator *> &path) const;
 
     void dump() const;
     void statistics() const;

@@ -2,9 +2,9 @@
 
 #include "../globals.h"
 #include "../option_parser.h"
-#include "../task_utils/variable_order_finder.h"
-#include "../utils/math.h"
+#include "../utilities.h"
 
+#include "../variable_order_finder.h"
 #include <vector>
 
 using namespace std;
@@ -62,7 +62,7 @@ static void build_pattern_for_size_limit(
     if (size_limit < 1)
         parser.error("abstraction size must be at least 1");
 
-    variable_order_finder::VariableOrderFinder order(variable_order_finder::GOAL_CG_LEVEL);
+    VariableOrderFinder order(GOAL_CG_LEVEL);
     int size = 1;
     while (true) {
         if (order.done())
@@ -70,7 +70,7 @@ static void build_pattern_for_size_limit(
         int next_var = order.next();
         int next_var_size = g_variable_domain[next_var];
 
-        if (!utils::is_product_within_limit(size, next_var_size, size_limit))
+        if (!is_product_within_limit(size, next_var_size, size_limit))
             break;
 
         pattern.push_back(next_var);
@@ -132,7 +132,7 @@ void parse_pattern(OptionParser &parser, Options &opts) {
     opts.set("pattern", pattern);
 
     if (!parser.dry_run())
-        cout << "pattern: TODO printout broken" << endl; // << pattern << endl;
+        cout << "pattern: " << pattern << endl;
 }
 
 void parse_patterns(OptionParser &parser, Options &opts) {
@@ -177,5 +177,5 @@ void parse_patterns(OptionParser &parser, Options &opts) {
     opts.set("patterns", pattern_collection);
 
     if (!parser.dry_run())
-        cout << "pattern collection: TODO printout broken" << endl; //pattern_collection << endl;
+        cout << "pattern collection: " << pattern_collection << endl;
 }

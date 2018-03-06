@@ -5,9 +5,7 @@
 #include <string>
 #include <vector>
 
-namespace equivalence_relation {
 class EquivalenceRelation;
-}
 class State;
 class Label;
 class Labels;
@@ -125,7 +123,7 @@ public:
     void compute_distances_and_prune();
     bool is_normalized() const;
     void normalize();
-    equivalence_relation::EquivalenceRelation *compute_local_equivalence_relation() const;
+    EquivalenceRelation *compute_local_equivalence_relation() const;
 
     int get_cost(const State &state) const;
     void statistics(bool include_expensive_statistics) const;

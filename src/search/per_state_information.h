@@ -2,15 +2,16 @@
 #define PER_STATE_INFORMATION_H
 
 #include "globals.h"
+#include "segmented_vector.h"
 #include "state.h"
 #include "state_id.h"
 #include "state_registry.h"
-
-#include "algorithms/segmented_vector.h"
-#include "utils/collections.h"
+#include "utilities.h"
 
 #include <cassert>
-#include <unordered_map>
+#include <iterator>
+
+#include <ext/hash_map>
 
 class PerStateInformationBase {
     friend class StateRegistry;
@@ -50,12 +51,12 @@ public:
 template<class Entry>
 class PerStateInformation : public PerStateInformationBase {
     const Entry default_value;
-    typedef std::unordered_map<const StateRegistry *,
-                               segmented_vector::SegmentedVector<Entry> * > EntryVectorMap;
+    typedef __gnu_cxx::hash_map<const StateRegistry *,
+                                SegmentedVector<Entry> *, hash_pointer > EntryVectorMap;
     EntryVectorMap entries_by_registry;
 
     mutable const StateRegistry *cached_registry;
-    mutable segmented_vector::SegmentedVector<Entry> *cached_entries;
+    mutable SegmentedVector<Entry> *cached_entries;
 
     /*
       Returns the SegmentedVector associated with the given StateRegistry.
@@ -63,12 +64,12 @@ class PerStateInformation : public PerStateInformationBase {
       Both the registry and the returned vector are cached to speed up
       consecutive calls with the same registry.
     */
-    segmented_vector::SegmentedVector<Entry> *get_entries(const StateRegistry *registry) {
+    SegmentedVector<Entry> *get_entries(const StateRegistry *registry) {
         if (cached_registry != registry) {
             cached_registry = registry;
             typename EntryVectorMap::const_iterator it = entries_by_registry.find(registry);
             if (it == entries_by_registry.end()) {
-                cached_entries = new segmented_vector::SegmentedVector<Entry>();
+                cached_entries = new SegmentedVector<Entry>();
                 entries_by_registry[registry] = cached_entries;
                 registry->subscribe(this);
             } else {
@@ -85,14 +86,14 @@ class PerStateInformation : public PerStateInformationBase {
       Otherwise, both the registry and the returned vector are cached to speed
       up consecutive calls with the same registry.
     */
-    const segmented_vector::SegmentedVector<Entry> *get_entries(const StateRegistry *registry) const {
+    const SegmentedVector<Entry> *get_entries(const StateRegistry *registry) const {
         if (cached_registry != registry) {
             typename EntryVectorMap::const_iterator it = entries_by_registry.find(registry);
             if (it == entries_by_registry.end()) {
                 return 0;
             } else {
                 cached_registry = registry;
-                cached_entries = const_cast<segmented_vector::SegmentedVector<Entry> *>(it->second);
+                cached_entries = const_cast<SegmentedVector<Entry> *>(it->second);
             }
         }
         assert(cached_registry == registry);
@@ -178,10 +179,10 @@ public:
 
     Entry &operator[](const State &state) {
         const StateRegistry *registry = &state.get_registry();
-        segmented_vector::SegmentedVector<Entry> *entries = get_entries(registry);
+        SegmentedVector<Entry> *entries = get_entries(registry);
         int state_id = state.get_id().value;
         size_t virtual_size = registry->size();
-        assert(utils::in_bounds(state_id, *registry));
+        assert(in_bounds(state_id, *registry));
         if (entries->size() < virtual_size) {
             entries->resize(virtual_size, default_value);
         }
@@ -190,12 +191,12 @@ public:
 
     const Entry &operator[](const State &state) const {
         const StateRegistry *registry = &state.get_registry();
-        const segmented_vector::SegmentedVector<Entry> *entries = get_entries(registry);
+        const SegmentedVector<Entry> *entries = get_entries(registry);
         if (!entries) {
             return default_value;
         }
         int state_id = state.get_id().value;
-        assert(utils::in_bounds(state_id, *registry));
+        assert(in_bounds(state_id, *registry));
         int num_entries = entries->size();
         if (state_id >= num_entries) {
             return default_value;
@@ -204,7 +205,7 @@ public:
     }
     
     size_t size(const StateRegistry *registry) const {
-        const segmented_vector::SegmentedVector<Entry> *entries = get_entries(registry);
+        const SegmentedVector<Entry> *entries = get_entries(registry);
         if (!entries) {
             return 0;
         }

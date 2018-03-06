@@ -1,6 +1,5 @@
 #include "ipc_max_heuristic.h"
 
-#include "operator_id.h"
 #include "option_parser.h"
 #include "plugin.h"
 
@@ -40,7 +39,7 @@ int IPCMaxHeuristic::compute_heuristic(const State &state) {
     return value;
 }
 
-bool IPCMaxHeuristic::reach_state(const State &parent_state, OperatorID op,
+bool IPCMaxHeuristic::reach_state(const State &parent_state, const Operator &op,
                                   const State &state) {
     bool result = false;
     for (size_t i = 0; i < evaluators.size(); ++i) {

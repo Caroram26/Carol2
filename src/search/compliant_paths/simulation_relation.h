@@ -10,10 +10,8 @@
 
 
 class Condition;
-namespace utils {
 class CountdownTimer;
-}
-class OperatorID;
+class Operator;
 
 
 class SimulationRelation {
@@ -22,10 +20,8 @@ private:
     
     // TODO for now, we hard-coded that the simulation relation is only computed for fork-leaves
 
-    static std::vector<std::vector<std::vector<LeafStateHash> > > simulated_states;
-    
-    std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > &transition_system_fwd;
-    std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > &transition_system_bwd;
+    std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > &transition_system_fwd;
+    std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > &transition_system_bwd;
     
     // For each operator, list of operators that dominate it in the center
     std::vector<boost::dynamic_bitset<> > op_dominated_by;
@@ -35,12 +31,16 @@ private:
     // Whether states are reachable after irrelevance pruning
     std::vector<boost::dynamic_bitset<>> reachable;
 
+
+    static std::vector<std::vector<std::vector<LeafStateHash> > > simulated_states;
+
+
     bool precondition_dominance(const std::vector<const Condition*> &pre,
                                 const std::vector<const Condition*> &pre2) const;
 
     void compute_label_dominance();
 
-    void compute_simulation (LeafFactorID factor, const utils::CountdownTimer &timer);
+    void compute_simulation (LeafFactorID factor, const CountdownTimer &timer);
 
     inline bool simulates(LeafFactorID factor, LeafStateHash s, LeafStateHash t) const {
         return relation[factor][s][t];
@@ -72,8 +72,8 @@ private:
 
 public:
 
-    SimulationRelation(std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > &transition_system_fwd_,
-                       std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > &transition_system_bwd_);
+    SimulationRelation(std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > &transition_system_fwd_,
+                       std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > &transition_system_bwd_);
 
     void init(int timeout = -1);
 

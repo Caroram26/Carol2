@@ -3,12 +3,12 @@
 #include "pdb_heuristic.h"
 #include "zero_one_pdbs_heuristic.h"
 
-#include "../task_utils/causal_graph.h"
+#include "../causal_graph.h"
 #include "../globals.h"
 #include "../plugin.h"
 #include "../rng.h"
-#include "../utils/math.h"
-#include "../utils/timer.h"
+#include "../timer.h"
+#include "../utilities.h"
 
 #include <algorithm>
 #include <cassert>
@@ -27,7 +27,7 @@ PatternGenerationEdelkamp::PatternGenerationEdelkamp(const Options &opts)
       mutation_probability(opts.get<double>("mutation_probability")),
       disjoint_patterns(opts.get<bool>("disjoint")),
       cost_type(OperatorCost(opts.get<int>("cost_type"))) {
-    utils::Timer timer;
+    Timer timer;
     genetic_algorithm();
     cout << "Pattern generation (Edelkamp) time: " << timer << endl;
 }
@@ -107,7 +107,7 @@ void PatternGenerationEdelkamp::remove_irrelevant_variables(
         // A variable is relevant to the pattern if it is a goal variable or if
         // there is a pre->eff arc from the variable to a relevant variable.
         // Note that there is no point in considering eff->eff arcs here.
-        const vector<int> &rel = causal_graph::get_causal_graph().get_eff_to_pre(var);
+        const vector<int> &rel = g_causal_graph->get_eff_to_pre(var);
         for (size_t i = 0; i < rel.size(); ++i) {
             int var_no = rel[i];
             if (in_original_pattern.count(var_no) &&
@@ -129,7 +129,7 @@ bool PatternGenerationEdelkamp::is_pattern_too_large(
     int mem = 1;
     for (size_t i = 0; i < pattern.size(); ++i) {
         int domain_size = g_variable_domain[pattern[i]];
-        if (!utils::is_product_within_limit(mem, domain_size, pdb_max_size))
+        if (!is_product_within_limit(mem, domain_size, pdb_max_size))
             return true;
         mem *= domain_size;
     }
@@ -221,7 +221,7 @@ void PatternGenerationEdelkamp::bin_packing() {
             int next_var_size = g_variable_domain[var];
             if (next_var_size > pdb_max_size) // var never fits into a bin
                 continue;
-            if (!utils::is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
+            if (!is_product_within_limit(current_size, next_var_size, pdb_max_size)) {
                 // Open a new bin for var.
                 pattern_collection.push_back(pattern);
                 pattern.clear();
@@ -268,10 +268,9 @@ void PatternGenerationEdelkamp::genetic_algorithm() {
 void PatternGenerationEdelkamp::dump() const {
     for (size_t i = 0; i < pattern_collections.size(); ++i) {
         cout << "pattern collection no " << (i + 1) << endl;
-        cout << "TODO printout broken" << endl;
-//        for (size_t j = 0; j < pattern_collections[i].size(); ++j) {
-//            cout << pattern_collections[i][j] << endl;
-//        }
+        for (size_t j = 0; j < pattern_collections[i].size(); ++j) {
+            cout << pattern_collections[i][j] << endl;
+        }
     }
 }
 

@@ -3,12 +3,12 @@
 
 #include "merge_strategy.h"
 
-#include "../task_utils/variable_order_finder.h"
+#include "../variable_order_finder.h"
 
 class Options;
 
 class MergeLinear : public MergeStrategy {
-    variable_order_finder::VariableOrderFinder order;
+    VariableOrderFinder order;
     bool need_first_index;
 protected:
     virtual void dump_strategy_specific_options() const;

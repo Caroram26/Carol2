@@ -1,21 +1,22 @@
 #include "globals.h"
 
-#include "algorithms/int_packer.h"
 #include "axioms.h"
+#include "causal_graph.h"
 #include "compliant_paths/compliant_path_graph.h"
 #include "compliant_paths/cpg_storage.h"
-#include "task_utils/domain_transition_graph.h"
+#include "domain_transition_graph.h"
 #include "factoring.h"
 #include "heuristic.h"
+#include "int_packer.h"
 #include "leaf_state_id.h"
 #include "operator.h"
 #include "rng.h"
 #include "state.h"
 #include "state_registry.h"
+#include "successor_generator.h"
 #include "symmetries/graph_creator.h"
-#include "task_utils/successor_generator.h"
-#include "utils/system.h"
-#include "utils/timer.h"
+#include "timer.h"
+#include "utilities.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -30,7 +31,6 @@ using namespace std;
 
 
 static const int PRE_FILE_VERSION = 3;
-
 
 // TODO: This needs a proper type and should be moved to a separate
 //       mutexes.cc file or similar, accessed via something called
@@ -59,18 +59,18 @@ bool test_goal(const State &state) {
     return true;
 }
 
-int calculate_plan_cost(const vector<OperatorID> &plan) {
+int calculate_plan_cost(const vector<const Operator *> &plan) {
     // TODO: Refactor: this is only used by save_plan (see below)
     //       and the SearchEngine classes and hence should maybe
     //       be moved into the SearchEngine (along with save_plan).
     int plan_cost = 0;
-    for (OperatorID id : plan) {
-        plan_cost += g_operators[id].get_cost();
+    for (size_t i = 0; i < plan.size(); ++i) {
+        plan_cost += plan[i]->get_cost();
     }
     return plan_cost;
 }
 
-void save_plan(const vector<OperatorID> &plan,
+void save_plan(const vector<const Operator *> &plan,
                bool generates_multiple_plan_files) {
     // TODO: Refactor: this is only used by the SearchEngine classes
     //       and hence should maybe be moved into the SearchEngine.
@@ -83,9 +83,9 @@ void save_plan(const vector<OperatorID> &plan,
         assert(plan_number == 1);
     }
     ofstream outfile(filename.str());
-    for (OperatorID id : plan) {
-        cout << g_operators[id].get_name() << " (" << g_operators[id].get_cost() << ")" << endl;
-        outfile << "(" << g_operators[id].get_name() << ")" << endl;
+    for (size_t i = 0; i < plan.size(); ++i) {
+        cout << plan[i]->get_name() << " (" << plan[i]->get_cost() << ")" << endl;
+        outfile << "(" << plan[i]->get_name() << ")" << endl;
     }
     int plan_cost = calculate_plan_cost(plan);
     outfile << "; cost = " << plan_cost << " ("
@@ -116,7 +116,7 @@ void check_magic(istream &in, string magic) {
                  << "on a preprocessor file from " << endl
                  << "an older version." << endl;
         }
-        exit_with(utils::ExitCode::INPUT_ERROR);
+        exit_with(EXIT_INPUT_ERROR);
     }
 }
 
@@ -129,7 +129,7 @@ void read_and_verify_version(istream &in) {
         cerr << "Expected preprocessor file version " << PRE_FILE_VERSION
              << ", got " << version << "." << endl;
         cerr << "Exiting." << endl;
-        exit_with(utils::ExitCode::INPUT_ERROR);
+        exit_with(EXIT_INPUT_ERROR);
     }
 }
 
@@ -220,7 +220,7 @@ void read_goal(istream &in) {
     in >> count;
     if (count < 1) {
         cerr << "Task has no goal condition!" << endl;
-        exit_with(utils::ExitCode::INPUT_ERROR);
+        exit_with(EXIT_INPUT_ERROR);
     }
     for (int i = 0; i < count; ++i) {
         int var, val;
@@ -254,7 +254,7 @@ void read_axioms(istream &in) {
 }
 
 void read_everything(istream &in) {
-    cout << "reading input... [t=" << utils::g_timer << "]" << endl;
+    cout << "reading input... [t=" << g_timer << "]" << endl;
     read_and_verify_version(in);
     read_metric(in);
     read_variables(in);
@@ -270,14 +270,24 @@ void read_everything(istream &in) {
     read_goal(in);
     read_operators(in);
     read_axioms(in);
-    check_magic(in, "begin_SG"); // ignore the rest
+    check_magic(in, "begin_SG");
+    g_successor_generator = read_successor_generator(in);
+    check_magic(in, "end_SG");
+    DomainTransitionGraph::read_all(in);
+    check_magic(in, "begin_CG"); // ignore everything from here
 
-    cout << "done reading input! [t=" << utils::g_timer << "]" << endl;
+    cout << "done reading input! [t=" << g_timer << "]" << endl;
+
+    // NOTE: causal graph is computed from the problem specification,
+    // so must be built after the problem has been read in.
+
+    cout << "building causal graph..." << flush;
+    g_causal_graph = new CausalGraph;
+    cout << "done! [t=" << g_timer << "]" << endl;
     
     
     if (g_factoring){
         verify_no_axioms_no_conditional_effects();
-        
         g_factoring->do_factoring_or_abstain();
         if (g_leaves.empty()){
             // no factoring found, but option given to not exit
@@ -304,54 +314,37 @@ void read_everything(istream &in) {
         center_domains.push_back(MAX_DUPLICATE_COUNTER);
         
         cout << "packing state variables..." << flush;
-        g_state_packer = new int_packer::IntPacker(center_domains);
+        g_state_packer = new IntPacker(center_domains);
         cout << "Variables: " << g_center.size() << endl;
-        g_leaf_factor_packers = vector<int_packer::IntPacker*>(g_leaves.size(), 0);
+        g_leaf_factor_packers = vector<IntPacker*>(g_leaves.size(), 0);
         for (size_t i = 0; i < g_leaf_factor_packers.size(); i++){
-            g_leaf_factor_packers[i] = new int_packer::IntPacker(leaf_domains[i]);
+            g_leaf_factor_packers[i] = new IntPacker(leaf_domains[i]);
         }
     } else {
-        g_state_packer = new int_packer::IntPacker(g_variable_domain);
-        g_leaf_factor_packers.push_back(new int_packer::IntPacker(vector<int>(1, 2)));
-        cout << "Variables: " << g_variable_domain.size() << endl;
+	g_state_packer = new IntPacker(g_variable_domain);
+	g_leaf_factor_packers.push_back(new IntPacker(vector<int>(1, 2)));
+	cout << "Variables: " << g_variable_domain.size() << endl;
     }
     
     cout << "Bytes per state: "
-         << g_state_packer->get_num_bins() * sizeof(int_packer::IntPacker::Bin) << endl;
+         << g_state_packer->get_num_bins() *
+            g_state_packer->get_bin_size_in_bytes() << endl;
     
     if (g_factoring){
-        for (LeafFactorID factor(0); factor < g_leaves.size(); ++factor){
-            cout << "Bytes per state of leaf factor " << factor << ": "
-                    << g_leaf_factor_packers[factor]->get_num_bins() * sizeof(int_packer::IntPacker::Bin) << endl;
-        }
+	for (LeafFactorID factor(0); factor < g_leaves.size(); ++factor){
+	    cout << "Bytes per state of leaf factor " << factor << ": "
+		<< g_leaf_factor_packers[factor]->get_num_bins() *
+		    g_leaf_factor_packers[factor]->get_bin_size_in_bytes() << endl;
+	}
     }
     
-    cout << "Building successor generator..." << flush;
-    int peak_memory_before = utils::get_peak_memory_in_kb();
-    utils::Timer successor_generator_timer;
-    g_successor_generator = new successor_generator::SuccessorGenerator();
-    if (g_factoring){
-        g_leaf_successor_generators.reserve(g_leaves.size());
-        for (LeafFactorID factor(0); factor < g_leaves.size(); ++factor){
-            g_leaf_successor_generators.push_back(new successor_generator::SuccessorGenerator(factor));
-        }
-    }
-    successor_generator_timer.stop();
-    cout << "done! [t=" << utils::g_timer << "]" << endl;
-    int peak_memory_after = utils::get_peak_memory_in_kb();
-    int memory_diff = peak_memory_after - peak_memory_before;
-    cout << "peak memory difference for root successor generator creation: "
-            << memory_diff << " KB" << endl
-            << "time for root successor generation creation: "
-            << successor_generator_timer << endl;
-
-    cout << "done! [t=" << utils::g_timer << "]" << endl;
+    cout << "done! [t=" << g_timer << "]" << endl;
 
     // NOTE: state registry stores the sizes of the state, so must be
     // built after the problem has been read in.
     g_state_registry = new StateRegistry;
 
-    cout << "done initalizing global data [t=" << utils::g_timer << "]" << endl;
+    cout << "done initalizing global data [t=" << g_timer << "]" << endl;
 }
 
 void dump_everything() {
@@ -389,7 +382,7 @@ void verify_no_axioms() {
     if (has_axioms()) {
         cerr << "Heuristic does not support axioms!" << endl << "Terminating."
              << endl;
-        exit_with(utils::ExitCode::UNSUPPORTED);
+        exit_with(EXIT_UNSUPPORTED);
     }
 }
 
@@ -415,7 +408,7 @@ void verify_no_conditional_effects() {
         cerr << "Heuristic does not support conditional effects "
              << "(operator " << g_operators[op_id].get_name() << ")" << endl
              << "Terminating." << endl;
-        exit_with(utils::ExitCode::UNSUPPORTED);
+        exit_with(EXIT_UNSUPPORTED);
     }
 }
 
@@ -460,8 +453,8 @@ unique_ptr<GraphCreator> g_symmetry_graph;
 vector<vector<string> > g_fact_names;
 vector<int> g_axiom_layers;
 vector<int> g_default_axiom_values;
-int_packer::IntPacker *g_state_packer;
-vector<int_packer::IntPacker*> g_leaf_factor_packers;
+IntPacker *g_state_packer;
+vector<IntPacker*> g_leaf_factor_packers;
 
 vector<int> g_initial_state_data;
 
@@ -473,9 +466,12 @@ int g_sum_min_goal_cost = 0;
 vector<Operator> g_operators;
 vector<Operator> g_axioms;
 AxiomEvaluator *g_axiom_evaluator;
-successor_generator::SuccessorGenerator *g_successor_generator;
-vector<successor_generator::SuccessorGenerator*> g_leaf_successor_generators;
+SuccessorGenerator *g_successor_generator;
+vector<SuccessorGenerator*> g_leaf_successor_generators;
 vector<DomainTransitionGraph *> g_transition_graphs;
+CausalGraph *g_causal_graph;
+
+Timer g_timer;
 
 string g_plan_filename = "sas_plan";
 bool g_is_part_of_anytime_portfolio = false;
