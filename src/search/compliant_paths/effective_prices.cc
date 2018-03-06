@@ -339,7 +339,7 @@ void EffectivePrices::goal_price_propagation() {
                     continue;
                 }
 
-                int action_cost = get_adjusted_action_cost(transition.first, cost_type);
+                int action_cost = get_adjusted_action_cost(g_operators[transition.first], cost_type);
                 int propagated_val = (value == INF ? numeric_limits<int>::max() : std::max(0, value - action_cost));
 
                 int previous_t_val = !has_effective_leaf_state(t, factor) ? numeric_limits<int>::max() :

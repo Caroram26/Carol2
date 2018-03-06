@@ -90,7 +90,7 @@ void SearchNode::open(int h, const SearchNode &parent_node,
                       OperatorID parent_op) {
     assert(info.status == SearchNodeInfo::NEW);
     info.status = SearchNodeInfo::OPEN;
-    info.g = parent_node.info.g + get_adjusted_action_cost(parent_op, cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
     info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
     info.h = h;
@@ -107,7 +107,7 @@ void SearchNode::reopen(const SearchNode &parent_node,
     // The latter possibility is for inconsistent heuristics, which
     // may require reopening closed nodes.
     info.status = SearchNodeInfo::OPEN;
-    info.g = parent_node.info.g + get_adjusted_action_cost(parent_op, cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
     info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
     info.parent_state_id = parent_node.get_state_id();
@@ -122,7 +122,7 @@ void SearchNode::update_parent(const SearchNode &parent_node,
            info.status == SearchNodeInfo::CLOSED);
     // The latter possibility is for inconsistent heuristics, which
     // may require reopening closed nodes.
-    info.g = parent_node.info.g + get_adjusted_action_cost(parent_op, cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
     info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
     info.parent_state_id = parent_node.get_state_id();

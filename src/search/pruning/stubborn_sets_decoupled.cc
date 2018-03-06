@@ -240,7 +240,7 @@ void StubbornSetsDecoupled::initialize() {
                             if (min_cost_to_goal[factor][succ.second] < numeric_limits<int>::max()){
                                 min_cost_to_goal[factor][id] = min(min_cost_to_goal[factor][id], 
                                                                    min_cost_to_goal[factor][succ.second] + 
-                                                                   get_adjusted_action_cost(succ.first, CompliantPathGraph::get_cost_type()));
+                                                                   get_adjusted_action_cost(g_operators[succ.first], CompliantPathGraph::get_cost_type()));
                             }
                         }
                         if (min_cost_to_goal[factor][id] < cost_before){
@@ -294,7 +294,7 @@ void StubbornSetsDecoupled::mark_fork_frontier_actions_as_stubborn(LeafFactorID 
             int curr_cost = current_cpg->get_cost_of_state(id, factor);
             for (const auto &succ : reduced_leaf_state_spaces[factor][id]){
                 int new_price = curr_cost;
-                new_price += get_adjusted_action_cost(succ.first, CompliantPathGraph::get_cost_type());
+                new_price += get_adjusted_action_cost(g_operators[succ.first], CompliantPathGraph::get_cost_type());
                 if (!current_cpg->has_leaf_state(succ.second, factor) || new_price < current_cpg->get_cost_of_state(succ.second, factor)){
                     bool can_improve_goal_cost = min_cost_to_goal[factor][succ.second] != CompliantPathGraph::INF;
                     can_improve_goal_cost = can_improve_goal_cost && new_price + min_cost_to_goal[factor][succ.second] < current_cpg->get_goal_cost(factor);
@@ -322,7 +322,7 @@ void StubbornSetsDecoupled::mark_goal_frontier_actions_as_stubborn(LeafFactorID 
                 // add transitions that can reduce the goal price
                 for (const auto &succ : reduced_leaf_state_spaces[factor][id]){
                     int new_price = curr_cost;
-                    new_price += get_adjusted_action_cost(succ.first, CompliantPathGraph::get_cost_type());
+                    new_price += get_adjusted_action_cost(g_operators[succ.first], CompliantPathGraph::get_cost_type());
                     if (!current_cpg->has_leaf_state(succ.second, factor) || new_price < current_cpg->get_cost_of_state(succ.second, factor)){
                         bool can_improve_goal_cost = !current_cpg->goal_reachable(factor);
                         can_improve_goal_cost = can_improve_goal_cost || (min_cost_to_goal[factor][succ.second] != CompliantPathGraph::INF &&
@@ -336,7 +336,7 @@ void StubbornSetsDecoupled::mark_goal_frontier_actions_as_stubborn(LeafFactorID 
                 // add transitions that can reduce a leaf state's price
                 for (const auto &succ : CompliantPathGraph::leaf_state_successors[factor][id]){
                     int new_price = curr_cost;
-                    new_price += get_adjusted_action_cost(succ.first, CompliantPathGraph::get_cost_type());
+                    new_price += get_adjusted_action_cost(g_operators[succ.first], CompliantPathGraph::get_cost_type());
                     if (!current_cpg->has_leaf_state(succ.second, factor) || new_price < current_cpg->get_cost_of_state(succ.second, factor)){
                         mark_as_stubborn(succ.first);
                     }
