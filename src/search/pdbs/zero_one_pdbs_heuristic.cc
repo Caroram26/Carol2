@@ -8,6 +8,7 @@
 #include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
+#include "../utilities.h"
 
 #include <vector>
 
@@ -74,10 +75,9 @@ int ZeroOnePDBsHeuristic::compute_heuristic(const State &state) {
 }
 
 void ZeroOnePDBsHeuristic::dump() const {
-    cout << "printout broken" << endl;
-//    for (size_t i = 0; i < pattern_databases.size(); ++i) {
-//        cout << pattern_databases[i]->get_pattern() << endl;
-//    }
+    for (size_t i = 0; i < pattern_databases.size(); ++i) {
+        cout << pattern_databases[i]->get_pattern() << endl;
+    }
 }
 
 static Heuristic *_parse(OptionParser &parser) {

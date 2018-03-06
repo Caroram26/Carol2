@@ -1,10 +1,13 @@
-#ifndef ALGORITHMS_SEGMENTED_VECTOR_H
-#define ALGORITHMS_SEGMENTED_VECTOR_H
+#ifndef SEGMENTED_VECTOR_H
+#define SEGMENTED_VECTOR_H
 
 #include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <vector>
+
+#include "utilities.h"
+
 
 /*
   SegmentedVector is a vector-like class with the following advantages over
@@ -43,8 +46,7 @@
 // For documentation on classes relevant to storing and working with registered
 // states see the file state_registry.h.
 
-namespace segmented_vector {
-template<class Entry, class Allocator = std::allocator<Entry>>
+template<class Entry, class Allocator = std::allocator<Entry> >
 class SegmentedVector {
     typedef typename Allocator::template rebind<Entry>::other EntryAllocator;
     // TODO: Try to find a good value for SEGMENT_BYTES.
@@ -87,7 +89,7 @@ public:
 
     ~SegmentedVector() {
         for (size_t i = 0; i < the_size; ++i) {
-            entry_allocator.destroy(&operator[](i));
+            entry_allocator.destroy( &operator[](i));
         }
         for (size_t segment = 0; segment < segments.size(); ++segment) {
             entry_allocator.deallocate(segments[segment], SEGMENT_ELEMENTS);
@@ -146,7 +148,7 @@ public:
 };
 
 
-template<class Element, class Allocator = std::allocator<Element>>
+template<class Element, class Allocator = std::allocator<Element> >
 class SegmentedArrayVector {
     typedef typename Allocator::template rebind<Element>::other ElementAllocator;
     // TODO: Try to find a good value for SEGMENT_BYTES.
@@ -264,6 +266,5 @@ public:
         }
     }
 };
-}
 
 #endif

@@ -15,7 +15,7 @@ class Operator;
 class Heuristic;
 class Options;
 
-typedef std::pair<StateID, OperatorID> OpenListEntryLazy;
+typedef std::pair<StateID, const Operator *> OpenListEntryLazy;
 
 class LazySearch : public SearchEngine {
 protected:
@@ -32,7 +32,7 @@ protected:
 
     State current_state;
     StateID current_predecessor_id;
-    OperatorID current_operator;
+    const Operator *current_operator;
     int current_g;
     int current_real_g;
 
@@ -44,7 +44,7 @@ protected:
 
     void reward_progress();
 
-    void get_successor_operators(std::vector<OperatorID> &ops);
+    void get_successor_operators(std::vector<const Operator *> &ops);
 public:
 
     LazySearch(const Options &opts);

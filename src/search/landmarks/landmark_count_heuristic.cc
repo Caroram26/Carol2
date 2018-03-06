@@ -1,8 +1,7 @@
 #include "landmark_count_heuristic.h"
 
 #include "../plugin.h"
-#include "../task_utils/successor_generator.h"
-#include "../utils/hash.h"
+#include "../successor_generator.h"
 
 #include <cmath>
 #include <ext/hash_map>
@@ -27,13 +26,13 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
         use_cost_sharing = true;
         if (lgraph.is_using_reasonable_orderings()) {
             cerr << "Reasonable orderings should not be used for admissible heuristics" << endl;
-            exit_with(utils::ExitCode::INPUT_ERROR);
+            exit_with(EXIT_INPUT_ERROR);
         } else if (has_axioms()) {
             cerr << "cost partitioning does not support axioms" << endl;
-            exit_with(utils::ExitCode::UNSUPPORTED);
+            exit_with(EXIT_UNSUPPORTED);
         } else if (has_conditional_effects() && !lgraph.supports_conditional_effects()) {
             cerr << "conditional effects not supported by the landmark generation method" << endl;
-            exit_with(utils::ExitCode::UNSUPPORTED);
+            exit_with(EXIT_UNSUPPORTED);
         }
         if (opts.get<bool>("optimal")) {
 #ifdef USE_LP
@@ -44,7 +43,7 @@ LandmarkCountHeuristic::LandmarkCountHeuristic(const Options &opts)
 #else
             cerr << "You must build the planner with the USE_LP symbol defined." << endl
                  << "If you already did, try \"make clean\" before rebuilding with USE_LP=1." << endl;
-            exit_with(utils::ExitCode::INPUT_ERROR);
+            exit_with(EXIT_INPUT_ERROR);
 #endif
         } else {
             lm_cost_assignment = new LandmarkUniformSharedCostAssignment(
@@ -171,9 +170,9 @@ void LandmarkCountHeuristic::collect_lm_leaves(bool disjunctive_lms,
 
 bool LandmarkCountHeuristic::check_node_orders_disobeyed(LandmarkNode &node,
                                                          const LandmarkSet &reached) const {
-    const hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>> &parents =
+    const hash_map<LandmarkNode *, edge_type, hash_pointer> &parents =
         node.parents;
-    for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::const_iterator
+    for (hash_map<LandmarkNode *, edge_type, hash_pointer>::const_iterator
          parent_it = parents.begin(); parent_it != parents.end(); ++parent_it) {
         LandmarkNode &parent = *(parent_it->first);
         if (reached.find(&parent) == reached.end()) {
@@ -189,13 +188,13 @@ bool LandmarkCountHeuristic::generate_helpful_actions(const State &state,
      return false. If a simple landmark can be achieved, return only operators
      that achieve simple landmarks, else return operators that achieve
      disjunctive landmarks */
-    vector<OperatorID> all_operators;
+    vector<const Operator *> all_operators;
     g_successor_generator->generate_applicable_ops(state, all_operators);
-    vector<OperatorID> ha_simple;
-    vector<OperatorID> ha_disj;
+    vector<const Operator *> ha_simple;
+    vector<const Operator *> ha_disj;
 
     for (size_t i = 0; i < all_operators.size(); ++i) {
-        const vector<Effect> &effects = g_operators[all_operators[i]].get_effects();
+        const vector<Effect> &effects = all_operators[i]->get_effects();
         for (size_t j = 0; j < effects.size(); ++j) {
             if (!effects[j].does_fire(state))
                 continue;

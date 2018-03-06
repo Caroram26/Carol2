@@ -297,15 +297,15 @@ void LeavesPermutation::set_value(int ind, int val) {
     from_factors[to_var] = var;
 }
 
-bool LeavesPermutation::is_symmetric_op(const Operator &op, const Operator &op2) const {
+bool LeavesPermutation::is_symmetric_op(const Operator *op, const Operator *op2) const {
     // we have to check in both directions below because otherwise, although
     // the sizes of pre/effs are equal, those can be distributed differently
     // over center and leaves, and since we skip center conditions/effects, we
     // might miss some of them.
-    const auto &effects = op.get_effects();
-    const auto &effects2 = op2.get_effects();
-    const auto &preconditions = op.get_preconditions();
-    const auto &preconditions2 = op2.get_preconditions();
+    const auto &effects = op->get_effects();
+    const auto &effects2 = op2->get_effects();
+    const auto &preconditions = op->get_preconditions();
+    const auto &preconditions2 = op2->get_preconditions();
 
     if (preconditions.size() != preconditions2.size() || effects.size() != effects2.size()){
         return false;
@@ -483,9 +483,9 @@ CenterPermutation::CenterPermutation(const CenterPermutation &p1,
     assert(is_valid());
 }
 
-bool CenterPermutation::is_symmetric_op(const Operator &op, const Operator &op2) const {
-    const vector<const Effect*> &effects = op.get_effects(LeafFactorID::CENTER);
-    const vector<const Effect*> &effects2 = op2.get_effects(LeafFactorID::CENTER);
+bool CenterPermutation::is_symmetric_op(const Operator *op, const Operator *op2) const {
+    const vector<const Effect*> &effects = op->get_effects(LeafFactorID::CENTER);
+    const vector<const Effect*> &effects2 = op2->get_effects(LeafFactorID::CENTER);
     if (effects.size() != effects2.size()){
         return false;
     }
@@ -645,25 +645,22 @@ inline bool are_equal(const vector<const Effect*> &effs1, const vector<const Eff
     return true;
 }
 
-OperatorID DecoupledPermutation::find_matching_min_cost_permuted_op(OperatorID main_op_id,
-									  const vector<OperatorID> &ops) const {
+const Operator * DecoupledPermutation::find_matching_min_cost_permuted_op(const Operator *main_op, 
+									  const vector<const Operator *> &ops) const {
 
     assert(!ops.empty());
 
     if (!center_permutation && !leaves_permutation){
-        assert(find(ops.begin(), ops.end(), main_op_id) != ops.end());
-        return main_op_id;
+        assert(find(ops.begin(), ops.end(), main_op) != ops.end());
+        return main_op;
     }
     
-    const Operator &main_op = g_operators[main_op_id];
-
     OperatorCost cost_type = CompliantPathGraph::get_cost_type();
 
-    for(OperatorID op_id : ops) {
-        const Operator &op = g_operators[op_id];
-        if (get_adjusted_action_cost(op, cost_type) == get_adjusted_action_cost(main_op, cost_type)) {
+    for(const auto op : ops) {
+        if (get_adjusted_action_cost(*op, cost_type) == get_adjusted_action_cost(*main_op, cost_type)) {
             if (!center_permutation){
-                if(!are_equal(main_op.get_effects(LeafFactorID::CENTER), op.get_effects(LeafFactorID::CENTER))) {
+                if(!are_equal(main_op->get_effects(LeafFactorID::CENTER), op->get_effects(LeafFactorID::CENTER))) {
                     continue;
                 }
             } else if (!center_permutation->is_symmetric_op(main_op, op)){
@@ -673,12 +670,12 @@ OperatorID DecoupledPermutation::find_matching_min_cost_permuted_op(OperatorID m
             if (!leaves_permutation){
                 bool equal = true;
                 for (LeafFactorID factor(0); factor < g_leaves.size(); ++factor){
-                    if(!are_equal(main_op.get_effects(factor), op.get_effects(factor))){
+                    if(!are_equal(main_op->get_effects(factor), op->get_effects(factor))){
                         equal = false;
                         break;
                     }
 
-                    if(!are_equal(main_op.get_preconditions(factor), op.get_preconditions(factor))){
+                    if(!are_equal(main_op->get_preconditions(factor), op->get_preconditions(factor))){
                         equal = false;
                         break;
                     }
@@ -690,12 +687,12 @@ OperatorID DecoupledPermutation::find_matching_min_cost_permuted_op(OperatorID m
                 continue;
             }
 
-            return op_id;
+            return op;
         }
     }
 
     cerr << "Error: no symmetric operator found in  DecoupledPermutation::find_matching_min_cost_permuted_op"  << endl;    
-    exit_with(utils::ExitCode::CRITICAL_ERROR);
+    exit(EXIT_CRITICAL_ERROR); 
 }
 
 bool DecoupledPermutation::stabilizes_center(const State &center) const {

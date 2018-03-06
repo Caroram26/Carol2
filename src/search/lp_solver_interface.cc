@@ -1,7 +1,7 @@
 #include "lp_solver_interface.h"
 
 #include "option_parser.h"
-#include "utils/system.h"
+#include "utilities.h"
 
 #ifdef COIN_HAS_CLP
 #pragma GCC diagnostic ignored "-Wsign-compare"
