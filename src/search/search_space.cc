@@ -7,7 +7,7 @@
 #include "operator.h"
 #include "search_node_info.h"
 #include "state.h"
-#include "task_utils/successor_generator.h"
+#include "successor_generator.h"
 #include "symmetries/graph_creator.h"
 #include "symmetries/permutation.h"
 
@@ -83,16 +83,16 @@ void SearchNode::open_initial(int h) {
     info.real_g = 0;
     info.h = h;
     info.parent_state_id = StateID::no_state;
-    info.creating_operator = OperatorID::no_operator;
+    info.creating_operator = 0;
 }
 
 void SearchNode::open(int h, const SearchNode &parent_node,
-                      OperatorID parent_op) {
+                      const Operator *parent_op) {
     assert(info.status == SearchNodeInfo::NEW);
     info.status = SearchNodeInfo::OPEN;
-    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(*parent_op, cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
-    info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
+    info.real_g = parent_node.info.real_g + parent_op->get_cost() + g_inc_g_by;// HACK
     info.h = h;
     info.parent_state_id = parent_node.get_state_id();
     info.creating_operator = parent_op;
@@ -100,16 +100,16 @@ void SearchNode::open(int h, const SearchNode &parent_node,
 }
 
 void SearchNode::reopen(const SearchNode &parent_node,
-                        OperatorID parent_op) {
+                        const Operator *parent_op) {
     assert(info.status == SearchNodeInfo::OPEN ||
            info.status == SearchNodeInfo::CLOSED);
 
     // The latter possibility is for inconsistent heuristics, which
     // may require reopening closed nodes.
     info.status = SearchNodeInfo::OPEN;
-    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(*parent_op, cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
-    info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
+    info.real_g = parent_node.info.real_g + parent_op->get_cost() + g_inc_g_by;// HACK
     info.parent_state_id = parent_node.get_state_id();
     info.creating_operator = parent_op;
     g_inc_g_by = 0;
@@ -117,14 +117,14 @@ void SearchNode::reopen(const SearchNode &parent_node,
 
 // like reopen, except doesn't change status
 void SearchNode::update_parent(const SearchNode &parent_node,
-                               OperatorID parent_op) {
+                               const Operator *parent_op) {
     assert(info.status == SearchNodeInfo::OPEN ||
            info.status == SearchNodeInfo::CLOSED);
     // The latter possibility is for inconsistent heuristics, which
     // may require reopening closed nodes.
-    info.g = parent_node.info.g + get_adjusted_action_cost(g_operators[parent_op], cost_type) + g_inc_g_by;
+    info.g = parent_node.info.g + get_adjusted_action_cost(*parent_op, cost_type) + g_inc_g_by;
     info.leaf_part_g = parent_node.info.leaf_part_g + g_inc_g_by;
-    info.real_g = parent_node.info.real_g + g_operators[parent_op].get_cost() + g_inc_g_by;// HACK
+    info.real_g = parent_node.info.real_g + parent_op->get_cost() + g_inc_g_by;// HACK
     info.parent_state_id = parent_node.get_state_id();
     info.creating_operator = parent_op;
     g_inc_g_by = 0;
@@ -149,7 +149,7 @@ void SearchNode::dump() const {
     cout << "g = " << info.g << " h = " << info.h << endl;
     g_state_registry->lookup_state(state_id).dump_pddl();
     if (info.creating_operator) {
-        cout << " created by " << g_operators[info.creating_operator].get_name()
+        cout << " created by " << info.creating_operator->get_name()
              << " from " << info.parent_state_id << endl;
     } else {
         cout << " no parent" << endl;
@@ -207,7 +207,7 @@ SearchNode SearchSpace::get_node(const State &state) {
 }
 
 void SearchSpace::trace_path(const State &goal_state,
-                             vector<OperatorID> &path) const {
+                             vector<const Operator *> &path) const {
                                  
     State current_state = goal_state;
     
@@ -220,7 +220,7 @@ void SearchSpace::trace_path(const State &goal_state,
     
     for (;;) {          // backtrace solution path
         const SearchNodeInfo &info = search_node_infos[current_state];
-        OperatorID op_id = info.creating_operator;
+        const Operator *op = info.creating_operator;
         
         if (g_factoring || g_symmetry_graph){
             states.push_back(current_state.get_id());
@@ -232,17 +232,16 @@ void SearchSpace::trace_path(const State &goal_state,
         if (g_symmetry_graph){
             State new_state = g_initial_state();
             unique_ptr<CompliantPathGraph> new_cpg;
-            if (op_id != OperatorID::no_operator) {
-                const Operator &op = g_operators[op_id];
+            if (op != 0) {
                 State parent_state = g_state_registry->lookup_state(info.parent_state_id);
                 
                 if (g_factoring){
-                    new_state = g_state_registry->get_center_successor(parent_state, op);
-                    new_cpg = CPGStorage::storage->get_cpg(parent_state)->get_successor_via_center_action(parent_state, &op);
+                    new_state = g_state_registry->get_center_successor(parent_state, *op);
+                    new_cpg = CPGStorage::storage->get_cpg(parent_state)->get_successor_via_center_action(parent_state, op);
                     new_cpg->update(new_state);
                     new_cpg->discard_new_graph();
                 } else {
-                    new_state = g_state_registry->get_successor_state(parent_state, op, false);
+                    new_state = g_state_registry->get_successor_state(parent_state, *op, false);
                 }
             } else {
                 if (g_factoring){
@@ -271,13 +270,13 @@ void SearchSpace::trace_path(const State &goal_state,
             }
         }
 
-        if (op_id == OperatorID::no_operator) {  // reached initial state => done
+        if (op == 0) {  // reached initial state => done
             assert(info.parent_state_id == StateID::no_state);
             break;
         }
 
         if (!g_symmetry_graph || g_factoring){
-            path.push_back(op_id);
+            path.push_back(op);
         }
         current_state = g_state_registry->lookup_state(info.parent_state_id);
     }
@@ -296,7 +295,7 @@ void SearchSpace::trace_path(const State &goal_state,
     reverse(path.begin(), path.end());
 }
 
-void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID> &states) const {
+void SearchSpace::trace_decoupled_path(vector<const Operator*> &path, vector<StateID> &states) const {
 #ifdef DEBUG_PLAN_EXTRACTION
     cout << "##################### STARTING TRACE_PATH" << endl;
 #endif
@@ -310,14 +309,14 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
     price_tags[0].reset(new PathPriceTag(0));
 
     for (LeafFactorID factor(0); factor < g_leaves.size(); ++factor){
-        price_tags[0]->add_state(LeafStateHash(0), factor, 0, OperatorID::no_operator, LeafStateHash::MAX);
+        price_tags[0]->add_state(LeafStateHash(0), factor, 0, 0, LeafStateHash::MAX);
     }
     price_tags[0]->update_price_tags(g_state_registry->lookup_state(states[0]));
 
     for (size_t i = 1; i < states.size(); ++i){
         if (g_factoring->get_profile() != FORK){
             price_tags[i].reset(new PathPriceTag(0));
-            price_tags[i]->apply_center_op_to_leaves(*price_tags[i - 1], g_operators[path[i - 1]]);
+            price_tags[i]->apply_center_op_to_leaves(*price_tags[i - 1], *path[i - 1]);
         } else {
             price_tags[i].reset(new PathPriceTag(price_tags[i - 1].get()));
         }
@@ -375,14 +374,14 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
     cout << "start backtracing plan" << endl;
 #endif
 
-    vector<OperatorID> decoupled_plan;
+    vector<const Operator*> decoupled_plan;
 
     // go through center path and fill in leaf actions
     for (size_t step = 0; step < price_tags.size(); ++step){
 
         const Operator *op = nullptr;
         if (step < path.size()){
-            op = &g_operators[path[step]];
+            op = path[step];
         }
 
 #ifdef DEBUG_PLAN_EXTRACTION
@@ -410,7 +409,7 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
 
                 const PathPriceTagInfo &fact = price_tags[step]->get_path_info_for_fact(marked_leaf_states[factor], factor);
                 if (fact.is_new){
-                    if (fact.best_supporter != OperatorID::no_operator){
+                    if (fact.best_supporter != 0){
                         assert(fact.predecessor != LeafStateHash::MAX);
                         assert(fact.predecessor != marked_leaf_states[factor]);
 
@@ -446,7 +445,7 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
                     LeafStateHash predecessor_hash = price_tags[step]->get_path_info_for_fact(state_hash, factor).predecessor;
 
                     assert(marked_leaf_states[factor] != predecessor_hash);
-                    assert(price_tags[step]->get_path_info_for_fact(state_hash, factor).best_supporter == OperatorID::no_operator);
+                    assert(price_tags[step]->get_path_info_for_fact(state_hash, factor).best_supporter == 0);
 
                     if (price_tags[step]->get_path_info_for_fact(state_hash, factor).predecessor != LeafStateHash::MAX){
                         marked_leaf_states[factor] = predecessor_hash;
@@ -490,7 +489,7 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
 
 
         if (op != nullptr){
-            decoupled_plan.push_back(op->get_id());
+            decoupled_plan.push_back(op);
 #ifdef DEBUG_PLAN_EXTRACTION
             cout << "added center op: " << decoupled_plan.back()->get_name() << endl;
 #endif
@@ -506,8 +505,8 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
     path.swap(decoupled_plan);
 }
 
-void SearchSpace::trace_symmetric_path(vector<OperatorID> &path, vector<StateID> &states, vector<Permutation> &permutations) const {
-    path.resize(states.size() - 1, OperatorID::no_operator);
+void SearchSpace::trace_symmetric_path(vector<const Operator*> &path, vector<StateID> &states, vector<Permutation> &permutations) const {
+    path.resize(states.size() - 1);
 
     Permutation temp_p;
     for (int i = permutations.size() - 1; i >= 0; --i) {
@@ -519,18 +518,18 @@ void SearchSpace::trace_symmetric_path(vector<OperatorID> &path, vector<StateID>
         states[i] = g_state_registry->get_state_permutation(g_state_registry->lookup_state(states[i]), permutation).get_id();
     }
     for (size_t i = states.size() - 1; i > 0; --i) {
-        vector<OperatorID> applicable_ops;
+        vector<const Operator *> applicable_ops;
         g_successor_generator->generate_applicable_ops(g_state_registry->lookup_state(states[i]), applicable_ops);
-        OperatorID min_cost_op = OperatorID::no_operator;
+        int min_cost_op = -1;
         int min_cost = numeric_limits<int>::max();
 
-        for (OperatorID op_id : applicable_ops) {
-            State succ_state = g_state_registry->get_successor_state(g_state_registry->lookup_state(states[i]), g_operators[op_id], false);
+        for (size_t o = 0; o < applicable_ops.size(); ++o) {
+            const Operator *op = applicable_ops[o];
+            State succ_state = g_state_registry->get_successor_state(g_state_registry->lookup_state(states[i]), *op, false);
             if (succ_state.get_id() == states[i-1]) {
-                int cost = g_operators[op_id].get_cost();
-                if (cost < min_cost) {
-                    min_cost = cost;
-                    min_cost_op = op_id;
+                if (op->get_cost() < min_cost) {
+                    min_cost = op->get_cost();
+                    min_cost_op = o;
                 }
             }
         }
@@ -544,11 +543,11 @@ void SearchSpace::trace_symmetric_path(vector<OperatorID> &path, vector<StateID>
             exit_with(EXIT_CRITICAL_ERROR);
         }
 #endif
-        path[i-1] = min_cost_op;
+        path[i-1] = applicable_ops[min_cost_op];
     }
 }
 
-void SearchSpace::trace_symmetric_path(vector<OperatorID> &permuted_path,
+void SearchSpace::trace_symmetric_path(vector<const Operator*> &permuted_path,
                                        vector<StateID> &states,
                                        vector<PathPriceTag> &cpgs,
                                        vector<unique_ptr<DecoupledPermutation> > &permutations) const {
@@ -586,7 +585,7 @@ void SearchSpace::trace_symmetric_path(vector<OperatorID> &permuted_path,
 #endif
 
     for (size_t i = states.size() - 1; i > 0; --i) {
-        vector<OperatorID> applicable_ops;
+        vector<const Operator *> applicable_ops;
         g_successor_generator->generate_applicable_ops(g_state_registry->lookup_state(states[i]), cpgs[i], applicable_ops);
 
         permuted_path[i-1] = permutations[i]->find_matching_min_cost_permuted_op(permuted_path[i-1], applicable_ops);
@@ -616,7 +615,7 @@ void SearchSpace::dump() const {
         cout << id << ": ";
         s.dump_fdr();
         if (node_info.creating_operator && node_info.parent_state_id != StateID::no_state) {
-            cout << " created by " << g_operators[node_info.creating_operator].get_name()
+            cout << " created by " << node_info.creating_operator->get_name()
                  << " from " << node_info.parent_state_id << endl;
         } else {
             cout << "has no parent" << endl;

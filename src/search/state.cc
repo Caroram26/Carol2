@@ -1,6 +1,7 @@
 #include "state.h"
 
 #include "globals.h"
+#include "utilities.h"
 #include "state_registry.h"
 
 #include <cassert>

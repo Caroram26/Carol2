@@ -3,7 +3,7 @@
 #include "landmark_graph.h"
 #include "util.h"
 
-#include "../task_utils/domain_transition_graph.h"
+#include "../domain_transition_graph.h"
 #include "../operator.h"
 #include "../state.h"
 #include "../globals.h"
@@ -154,7 +154,7 @@ void LandmarkFactoryRpgSasp::found_simple_lm_and_order(const pair<int, int> a,
         node.vals.push_back(a.second);
         // Clean orders: let disj. LM {D1,...,Dn} be ordered before L. We
         // cannot infer that any one of D1,...Dn by itself is ordered before L
-        for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::iterator it =
+        for (hash_map<LandmarkNode *, edge_type, hash_pointer>::iterator it =
                  node.children.begin(); it != node.children.end(); ++it)
             it->first->parents.erase(&node);
         node.children.clear();
@@ -254,7 +254,7 @@ static string get_predicate_for_fact(int var_no, int value) {
     if (predicate_pos == 0 || paren_pos == string::npos) {
         cerr << "error: cannot extract predicate from fact: "
              << fact_name << endl;
-        exit_with(utils::ExitCode::INPUT_ERROR);
+        exit_with(EXIT_INPUT_ERROR);
     }
     return string(fact_name.begin() + predicate_pos, fact_name.begin() + paren_pos);
 }
@@ -383,7 +383,7 @@ void LandmarkFactoryRpgSasp::generate_landmarks() {
             // relaxed plan that propositions are achieved (in lvl_var) and operators
             // applied (in lvl_ops).
             vector<vector<int> > lvl_var;
-            vector<hash_map<pair<int, int>, int, std::hash<pair<int, int>>>> lvl_op;
+            vector<hash_map<pair<int, int>, int, hash_int_pair> > lvl_op;
             compute_predecessor_information(bp, lvl_var, lvl_op);
             // Use this information to determine all operators that can possibly achieve bp
             // for the first time, and collect any precondition propositions that all such
@@ -533,7 +533,7 @@ void LandmarkFactoryRpgSasp::add_lm_forward_orders() {
     for (node_it = lm_graph->get_nodes().begin(); node_it != lm_graph->get_nodes().end(); ++node_it) {
         LandmarkNode &node = **node_it;
 
-        for (hash_set<pair<int, int>, std::hash<pair<int, int>>>::iterator it2 =
+        for (hash_set<pair<int, int>, hash_int_pair>::iterator it2 =
                  node.forward_orders.begin(); it2 != node.forward_orders.end(); ++it2) {
             pair<int, int> node2_pair = *it2;
 

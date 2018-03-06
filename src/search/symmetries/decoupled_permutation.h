@@ -9,7 +9,6 @@
 class CompliantPathGraph;
 class LexicographicOrdering;
 class Operator;
-class OperatorID;
 class Prices;
 
 class DecoupledFactIndex {
@@ -89,7 +88,7 @@ public:
     
     cmp_t cmp_prices(const CompliantPathGraph &cpg) const;
     
-    bool is_symmetric_op(const Operator &op, const Operator &op2) const;
+    bool is_symmetric_op(const Operator *op, const Operator *op2) const;
     
     void print_cycle_notation() const;
 
@@ -106,7 +105,7 @@ public:
     
     ~CenterPermutation() = default;
 
-    bool is_symmetric_op(const Operator &op, const Operator &op2) const;
+    bool is_symmetric_op(const Operator *op, const Operator *op2) const;
 
     bool is_valid() const;
 
@@ -154,8 +153,8 @@ public:
     
     void print_cycle_notation() const;
     
-    OperatorID find_matching_min_cost_permuted_op(OperatorID op,
-							const std::vector<OperatorID> &ops) const;
+    const Operator * find_matching_min_cost_permuted_op(const Operator *op, 
+							const std::vector<const Operator*> &ops) const;
     
     const LeavesPermutation & get_leaves_permutation() const {
         return *leaves_permutation;

@@ -32,7 +32,7 @@ LandmarkNode *LandmarkGraphMerged::get_matching_landmark(const LandmarkNode &lm)
             return 0;
     } else if (lm.conjunctive) {
         cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-        exit_with(utils::ExitCode::UNSUPPORTED);
+        exit_with(EXIT_UNSUPPORTED);
     }
     return 0;
 }
@@ -77,7 +77,7 @@ void LandmarkGraphMerged::generate_landmarks() {
                 }
             } else if (node.conjunctive) {
                 cerr << "Don't know how to handle conjunctive landmarks yet" << endl;
-                exit_with(utils::ExitCode::UNSUPPORTED);
+                exit_with(EXIT_UNSUPPORTED);
             }
         }
     }
@@ -90,7 +90,7 @@ void LandmarkGraphMerged::generate_landmarks() {
             const LandmarkNode &from_orig = **it;
             LandmarkNode *from = get_matching_landmark(from_orig);
             if (from) {
-                hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::const_iterator to_it;
+                hash_map<LandmarkNode *, edge_type, hash_pointer>::const_iterator to_it;
                 for (to_it = from_orig.children.begin(); to_it != from_orig.children.end(); ++to_it) {
                     const LandmarkNode &to_orig = *to_it->first;
                     edge_type e_type = to_it->second;

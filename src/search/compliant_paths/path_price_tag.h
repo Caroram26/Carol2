@@ -5,20 +5,19 @@
 
 
 struct PathPriceTagInfo {
-    OperatorID best_supporter;
+    const Operator *best_supporter;
     LeafStateHash predecessor;
     bool is_new;
     
-    PathPriceTagInfo() : best_supporter(OperatorID::no_operator),
-                         predecessor(LeafStateHash::MAX),
+    PathPriceTagInfo() : predecessor(LeafStateHash::MAX),
                          is_new(false) {}
     
-    PathPriceTagInfo(OperatorID bs, LeafStateHash predecessor, bool is_new = false)
+    PathPriceTagInfo(const Operator* bs, LeafStateHash predecessor, bool is_new = false)
             : best_supporter(bs), predecessor(predecessor), is_new(is_new) {}
             
     void reset_supporter() {
         is_new = false;
-        best_supporter = OperatorID::no_operator;
+        best_supporter = 0;
     }
     
     void dump() const;    
@@ -34,7 +33,7 @@ class PathPriceTag : public Prices {
     // return true, if the fact was actually added
     // in satisficing planning, return true only if the leaf state was
     // not already reached, before
-    bool add_state(LeafStateHash id, LeafFactorID factor, int cost, OperatorID bs,
+    bool add_state(LeafStateHash id, LeafFactorID factor, int cost, const Operator *bs, 
                    LeafStateHash predecessor);
     
     PathPriceTag(const PathPriceTag *cpg);

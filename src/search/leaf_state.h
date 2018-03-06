@@ -1,13 +1,13 @@
 #ifndef LEAF_STATE_H
 #define LEAF_STATE_H
 
-#include "algorithms/int_packer.h"
+#include "int_packer.h"
 #include "leaf_state_id.h"
 
 // For documentation on classes relevant to storing and working with registered
 // states see the file state_registry.h.
 
-typedef int_packer::IntPacker::Bin PackedStateBin;
+typedef IntPacker::Bin PackedStateBin;
 
 class LeafState {
     friend class StateRegistry;
