@@ -1,8 +1,10 @@
-#ifndef VARIABLE_ORDER_FINDER_H
-#define VARIABLE_ORDER_FINDER_H
+#ifndef TASK_UTILS_VARIABLE_ORDER_FINDER_H
+#define TASK_UTILS_VARIABLE_ORDER_FINDER_H
 
+#include <memory>
 #include <vector>
 
+namespace variable_order_finder {
 enum VariableOrderType {
     CG_GOAL_LEVEL,
     CG_GOAL_RANDOM,
@@ -12,6 +14,13 @@ enum VariableOrderType {
     REVERSE_LEVEL
 };
 
+extern void dump_variable_order_type(VariableOrderType variable_order_type);
+
+/*
+  NOTE: VariableOrderFinder keeps a reference to the task proxy passed to the
+  constructor. Therefore, users of the class must ensure that the task lives at
+  least as long as the variable order finder.
+*/
 class VariableOrderFinder {
     const VariableOrderType variable_order_type;
     std::vector<int> selected_vars;
@@ -22,10 +31,10 @@ class VariableOrderFinder {
     void select_next(int position, int var_no);
 public:
     VariableOrderFinder(VariableOrderType variable_order_type);
-    ~VariableOrderFinder();
+    ~VariableOrderFinder() = default;
     bool done() const;
     int next();
-    void dump() const;
 };
+}
 
 #endif

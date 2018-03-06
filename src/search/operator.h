@@ -3,8 +3,10 @@
 
 #include "globals.h"
 #include "leaf_state.h"
+#include "operator_id.h"
 #include "state.h"
-#include "utilities.h"
+#include "task_utils/fact_pair.h"
+#include "utils/collections.h"
 
 #include <cassert>
 #include <iostream>
@@ -17,7 +19,7 @@ struct Condition {
     int val;
     explicit Condition(std::istream &in);
     Condition(int v, int p) : var(v), val(p) {
-        assert(in_bounds(var, g_variable_name));
+        assert(utils::in_bounds(var, g_variable_name));
         assert(val >= 0 && val < g_variable_domain[var]);
     }
 
@@ -31,6 +33,10 @@ struct Condition {
 
     bool operator!=(const Condition &other) const {
         return !(*this == other);
+    }
+
+    FactPair get_pair() const {
+        return FactPair(var, val);
     }
 
     void dump() const;
@@ -129,10 +135,10 @@ public:
         marked = false;
     }
     
-    size_t get_index() const {
+    OperatorID get_id() const {
         int op_index = this - &*g_operators.begin();
         assert(op_index >= 0 && (size_t) op_index < g_operators.size());
-        return op_index;
+        return OperatorID(op_index);
     }
     
     void set_affected_factor(LeafFactorID factor);

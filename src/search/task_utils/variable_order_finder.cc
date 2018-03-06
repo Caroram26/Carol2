@@ -1,20 +1,23 @@
 #include "variable_order_finder.h"
 
-#include "causal_graph.h"
-#include "globals.h"
-#include "utilities.h"
+#include "../globals.h"
+
+#include "../task_utils/causal_graph.h"
+#include "../utils/system.h"
 
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
+
 using namespace std;
+using utils::ExitCode;
 
 
-VariableOrderFinder::VariableOrderFinder(
-    VariableOrderType variable_order_type_)
-    : variable_order_type(variable_order_type_) {
+namespace variable_order_finder {
+VariableOrderFinder::VariableOrderFinder(VariableOrderType variable_order_type) :
+      variable_order_type(variable_order_type) {
     int var_count = g_variable_domain.size();
     if (variable_order_type == REVERSE_LEVEL) {
         for (int i = 0; i < var_count; ++i)
@@ -25,25 +28,25 @@ VariableOrderFinder::VariableOrderFinder(
     }
 
     if (variable_order_type == CG_GOAL_RANDOM ||
-        variable_order_type == RANDOM)
+        variable_order_type == RANDOM) {
+        // TODO: use an instance of RandomNumberGenerator for shuffling.
         random_shuffle(remaining_vars.begin(), remaining_vars.end());
+    }
 
     is_causal_predecessor.resize(var_count, false);
     is_goal_variable.resize(var_count, false);
-    for (size_t i = 0; i < g_goal.size(); ++i)
-        is_goal_variable[g_goal[i].first] = true;
-}
-
-VariableOrderFinder::~VariableOrderFinder() {
+    for (const auto &goal : g_goal)
+        is_goal_variable[goal.first] = true;
 }
 
 void VariableOrderFinder::select_next(int position, int var_no) {
     assert(remaining_vars[position] == var_no);
     remaining_vars.erase(remaining_vars.begin() + position);
     selected_vars.push_back(var_no);
-    const vector<int> &new_vars = g_causal_graph->get_eff_to_pre(var_no);
-    for (size_t i = 0; i < new_vars.size(); ++i)
-        is_causal_predecessor[new_vars[i]] = true;
+    const causal_graph::CausalGraph &cg = causal_graph::get_causal_graph();
+    const vector<int> &new_vars = cg.get_eff_to_pre(var_no);
+    for (int new_var : new_vars)
+        is_causal_predecessor[new_var] = true;
 }
 
 bool VariableOrderFinder::done() const {
@@ -95,10 +98,10 @@ int VariableOrderFinder::next() {
         return var_no;
     }
     cerr << "Relevance analysis has not been performed." << endl;
-    exit_with(EXIT_INPUT_ERROR);
+    utils::exit_with(ExitCode::INPUT_ERROR);
 }
 
-void VariableOrderFinder::dump() const {
+void dump_variable_order_type(VariableOrderType variable_order_type) {
     cout << "Variable order type: ";
     switch (variable_order_type) {
     case CG_GOAL_LEVEL:
@@ -123,4 +126,5 @@ void VariableOrderFinder::dump() const {
         ABORT("Unknown variable order type.");
     }
     cout << endl;
+}
 }
