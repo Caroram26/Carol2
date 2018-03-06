@@ -10,8 +10,7 @@
 #include "../globals.h"
 #include "../option_parser.h"
 #include "../plugin.h"
-#include "../timer.h"
-#include "../utilities.h"
+#include "../utils/timer.h"
 
 #include <cassert>
 #include <cstdlib>
@@ -22,7 +21,7 @@ using namespace std;
 CanonicalPDBsHeuristic::CanonicalPDBsHeuristic(const Options &opts)
     : Heuristic(opts) {
     const vector<vector<int> > &pattern_collection(opts.get_list<vector<int> >("patterns"));
-    Timer timer;
+    utils::Timer timer;
     size = 0;
     pattern_databases.reserve(pattern_collection.size());
     for (size_t i = 0; i < pattern_collection.size(); ++i)
@@ -105,7 +104,7 @@ void CanonicalPDBsHeuristic::compute_additive_vars() {
 }
 
 void CanonicalPDBsHeuristic::dominance_pruning() {
-    Timer timer;
+    utils::Timer timer;
     int num_patterns = pattern_databases.size();
     int num_cliques = max_cliques.size();
 
@@ -239,8 +238,8 @@ void CanonicalPDBsHeuristic::dump_cgraph(const vector<vector<int> > &cgraph) con
     // print compatibility graph
     cout << "Compatibility graph" << endl;
     for (size_t i = 0; i < cgraph.size(); ++i) {
-        cout << i << " adjacent to: ";
-        cout << cgraph[i] << endl;
+        cout << i << " adjacent to: TODO: fix this printout" << endl;
+//        cout << cgraph[i] << endl;
     }
 }
 
@@ -265,9 +264,10 @@ void CanonicalPDBsHeuristic::dump_cliques() const {
 }
 
 void CanonicalPDBsHeuristic::dump() const {
-    for (size_t i = 0; i < pattern_databases.size(); ++i) {
-        cout << pattern_databases[i]->get_pattern() << endl;
-    }
+    cout << "TODO: printout broken" << endl;
+//    for (size_t i = 0; i < pattern_databases.size(); ++i) {
+//        cout << pattern_databases[i]->get_pattern() << endl;
+//    }
 }
 
 static Heuristic *_parse(OptionParser &parser) {

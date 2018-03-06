@@ -1,11 +1,10 @@
 #include "equivalence_relation.h"
 
-#include "utilities.h"
-
 #include <cassert>
 
 using namespace std;
 
+namespace equivalence_relation {
 bool Block::empty() const {
     return elements.empty();
 }
@@ -100,6 +99,11 @@ void EquivalenceRelation::refine(const EquivalenceRelation &other) {
   our relation. If such elements exist, a new block is created for them.
 */
 void EquivalenceRelation::refine(const Block &block_X) {
+    refine(block_X.begin(), block_X.end());
+}
+
+void EquivalenceRelation::refine(ElementListConstIter block_X_begin,
+                                 ElementListConstIter block_X_end) {
     // An iterator to the block (B \cap X) is stored in every block B that has
     // a non-empty intersection with X. This iterator has to be reset at the end
     // so all such blocks are stored.
@@ -110,7 +114,7 @@ void EquivalenceRelation::refine(const Block &block_X) {
     BlockListIter it_unknown_elements = blocks.end();
 
     // For every x \in X:
-    for (ElementListConstIter it_x = block_X.begin(); it_x != block_X.end(); ++it_x) {
+    for (ElementListConstIter it_x = block_X_begin; it_x != block_X_end; ++it_x) {
         int x = *it_x;
         ElementPositionMap::iterator it_pos = element_positions.find(x);
         if (it_pos != element_positions.end()) {
@@ -155,4 +159,5 @@ void EquivalenceRelation::refine(const Block &block_X) {
             modified_block->it_intersection_block = blocks.end();
         }
     }
+}
 }

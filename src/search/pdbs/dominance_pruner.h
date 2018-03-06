@@ -3,7 +3,7 @@
 
 #include "pdb_heuristic.h"
 
-#include "../utilities.h"
+#include "../utils/hash.h"
 
 #include <vector>
 #include <ext/hash_set>
@@ -15,7 +15,7 @@ private:
 
     // Precomputed superset relation of patterns.
     typedef __gnu_cxx::hash_set<std::pair<PDBHeuristic *, PDBHeuristic *>,
-                                hash_pointer_pair> PDBRelation;
+            utils::Hash<std::pair<PDBHeuristic *, PDBHeuristic *>>> PDBRelation;
     PDBRelation superset_relation;
     void compute_superset_relation();
 
