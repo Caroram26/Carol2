@@ -417,7 +417,7 @@ void SearchSpace::trace_decoupled_path(vector<OperatorID> &path, vector<StateID>
                         marked_leaf_states[factor] = fact.predecessor;
                         decoupled_plan.push_back(fact.best_supporter);
 
-                        assert(fact.best_supporter->get_affected_factor() == (int) factor);
+                        assert(g_operators[fact.best_supporter].get_affected_factor() == factor);
                     } else if (fact.predecessor != LeafStateHash::MAX){
                         // this leaf state has been copied from one decoupled state to its successor
                         // the state can have been modified by the center op
@@ -535,13 +535,13 @@ void SearchSpace::trace_symmetric_path(vector<OperatorID> &path, vector<StateID>
             }
         }
 #ifndef NDEBUG
-        if (min_cost_op == -1) {
+        if (min_cost_op == OperatorID::no_operator) {
             cout << "No operator is found!!!" << endl
                  << "Cannot reach the state:" << endl;
             g_state_registry->lookup_state(states[i-1]).dump_pddl();
             cout << endl << "From the state:" << endl;
             g_state_registry->lookup_state(states[i]).dump_pddl();
-            exit_with(EXIT_CRITICAL_ERROR);
+            exit_with(utils::ExitCode::CRITICAL_ERROR);
         }
 #endif
         path[i-1] = min_cost_op;
@@ -594,8 +594,8 @@ void SearchSpace::trace_symmetric_path(vector<OperatorID> &permuted_path,
 #ifndef NDEBUG
         // verify that applying permuted_path[i-1] is states[i] results in states[i-1]
         PathPriceTag new_cpg(0);
-        new_cpg.apply_center_op_to_leaves(cpgs[i], *permuted_path[i-1]);
-        State center_successor = g_state_registry->get_center_successor(g_state_registry->lookup_state(states[i]), *permuted_path[i-1]);
+        new_cpg.apply_center_op_to_leaves(cpgs[i], g_operators[permuted_path[i-1]]);
+        State center_successor = g_state_registry->get_center_successor(g_state_registry->lookup_state(states[i]), g_operators[permuted_path[i-1]]);
         new_cpg.update_price_tags(center_successor);
         // this check can fail in optimal planning, because the g-value adaption is done
         // in cpgs[i-1], but not in new_cpg

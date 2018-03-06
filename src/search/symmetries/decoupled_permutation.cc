@@ -651,7 +651,7 @@ OperatorID DecoupledPermutation::find_matching_min_cost_permuted_op(OperatorID m
     assert(!ops.empty());
 
     if (!center_permutation && !leaves_permutation){
-        assert(find(ops.begin(), ops.end(), main_op) != ops.end());
+        assert(find(ops.begin(), ops.end(), main_op_id) != ops.end());
         return main_op_id;
     }
     
