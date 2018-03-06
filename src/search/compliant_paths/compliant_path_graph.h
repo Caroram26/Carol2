@@ -5,6 +5,7 @@
 #include "../factoring.h"
 #include "../globals.h"
 #include "../operator_cost.h"
+#include "../operator_id.h"
 #include "pruning_options.h"
 
 #include <vector>
@@ -26,9 +27,8 @@ class CompliantPathGraph {
     friend class PruningOptions; // access to leaf_state_pre/successors
     friend class SimulationRelation; // access to leaf_goal_states
     friend class StateRegistry; // build leaf state spaces + init state cpg
-    friend class SuccessorGeneratorSwitch; // access to center_successors
+    friend class successor_generator::SuccessorGenerator; // access to center_successors
     friend class SearchSpace; // to update CPGs when reconstructing symmetry path
-
     
     /*
       this builds all entire leaf state spaces and stores them
@@ -60,11 +60,11 @@ protected:
     // these are only computed if compute_leaf_backwards_graph is true
     static std::vector<std::vector<LeafStateHash> > leaf_goal_states;
     
-    static std::vector<std::vector<std::vector<size_t> > > center_successors;
+    static std::vector<std::vector<std::vector<OperatorID> > > center_successors;
     
-    static std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > leaf_state_successors;
+    static std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > leaf_state_successors;
     
-    static std::vector<std::vector<std::vector<std::pair<const Operator*, LeafStateHash> > > > leaf_state_predecessors;
+    static std::vector<std::vector<std::vector<std::pair<OperatorID, LeafStateHash> > > > leaf_state_predecessors;
     
     static std::vector<std::vector<int> > leaf_state_id_map;
     

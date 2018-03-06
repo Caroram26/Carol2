@@ -5,8 +5,6 @@
 #include "../operator.h"
 #include "pruning_options.h"
 #include "../state_registry.h"
-#include "../successor_generator.h"
-#include "../utilities.h"
 
 #include <limits>
 
@@ -181,6 +179,6 @@ unique_ptr<CompliantPathGraph> PruningReachable::clone() const {
 bool PruningReachable::apply_symmetry_permutation(const LeavesPermutation &) {
     // TODO implement this
     cerr << "PruningReachable::apply_symmetry_permutation not implemented" << endl;
-    exit_with(EXIT_CRITICAL_ERROR);
+    exit_with(utils::ExitCode::CRITICAL_ERROR);
 }
     

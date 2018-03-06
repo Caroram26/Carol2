@@ -2,7 +2,7 @@
 #include "../operator.h"
 #include "../state.h"
 #include "../globals.h"
-#include "../utilities.h"
+#include "../utils/collections.h"
 
 #include <cassert>
 #include <limits>
@@ -125,18 +125,18 @@ void Exploration::build_unary_operators(const Operator &op) {
     vector<pair<int, int> > precondition_var_vals1;
 
     for (size_t i = 0; i < preconditions.size(); ++i) {
-        assert(in_bounds(preconditions[i].var, g_variable_domain));
+        assert(utils::in_bounds(preconditions[i].var, g_variable_domain));
         assert(preconditions[i].val >= 0 && preconditions[i].val < g_variable_domain[preconditions[i].var]);
         precondition_var_vals1.push_back(make_pair(preconditions[i].var, preconditions[i].val));
     }
     for (size_t i = 0; i < effects.size(); ++i) {
         vector<pair<int, int> > precondition_var_vals2(precondition_var_vals1);
-        assert(in_bounds(effects[i].var, g_variable_domain));
+        assert(utils::in_bounds(effects[i].var, g_variable_domain));
         assert(effects[i].val >= 0 && effects[i].val < g_variable_domain[effects[i].var]);
         ExProposition *effect = &propositions[effects[i].var][effects[i].val];
         const vector<Condition> &eff_conds = effects[i].conditions;
         for (size_t j = 0; j < eff_conds.size(); ++j) {
-            assert(in_bounds(eff_conds[j].var, g_variable_domain));
+            assert(utils::in_bounds(eff_conds[j].var, g_variable_domain));
             assert(eff_conds[j].val >= 0 && eff_conds[j].val < g_variable_domain[eff_conds[j].var]);
             precondition_var_vals2.push_back(make_pair(eff_conds[j].var, eff_conds[j].val));
         }
@@ -328,7 +328,7 @@ void Exploration::collect_relaxed_plan(ExProposition *goal,
                 && unary_op->h_add_cost == unary_op->base_cost
                 && unary_op->depth == 0
                 && !op->is_axiom()) {
-                set_preferred(op);
+                set_preferred(op->get_id());
                 assert(op->is_applicable(state));
             }
         }
@@ -336,7 +336,7 @@ void Exploration::collect_relaxed_plan(ExProposition *goal,
 }
 
 void Exploration::compute_reachability_with_excludes(vector<vector<int> > &lvl_var,
-                                                     vector<hash_map<pair<int, int>, int, hash_int_pair> > &lvl_op,
+                                                     vector<hash_map<pair<int, int>, int, std::hash<pair<int, int>>>> &lvl_op,
                                                      bool level_out,
                                                      const vector<pair<int, int> > &excluded_props,
                                                      const hash_set<const Operator *, ex_hash_operator_ptr> &excluded_ops,
@@ -424,7 +424,7 @@ void Exploration::collect_ha(ExProposition *goal,
             && unary_op->h_add_cost == unary_op->base_cost
             && unary_op->depth == 0
             && !op->is_axiom()) {
-            exported_ops.push_back(op); // This is a helpful action.
+            exported_ops.push_back(op->get_id()); // This is a helpful action.
             assert(op->is_applicable(state));
         }
     }

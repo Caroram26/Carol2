@@ -1,5 +1,5 @@
 #include "landmark_factory.h"
-#include "../exact_timer.h"
+#include "../utils/timer.h"
 #include "util.h"
 
 #include <limits>
@@ -13,7 +13,7 @@ LandmarkFactory::LandmarkFactory(const Options &opts)
 }
 
 LandmarkGraph *LandmarkFactory::compute_lm_graph() {
-    ExactTimer lm_generation_timer;
+    utils::Timer lm_generation_timer;
     generate_landmarks();
 
     // the following replaces the old "build_lm_graph"
@@ -87,7 +87,7 @@ bool LandmarkFactory::is_landmark_precondition(const Operator &o,
 }
 
 bool LandmarkFactory::relaxed_task_solvable(vector<vector<int> > &lvl_var,
-                                            vector<hash_map<pair<int, int>, int, hash_int_pair> > &lvl_op,
+                                            vector<hash_map<pair<int, int>, int, std::hash<pair<int, int>>> > &lvl_op,
                                             bool level_out, const LandmarkNode *exclude, bool compute_lvl_op) const {
     /* Test whether the relaxed planning task is solvable without achieving the propositions in
      "exclude" (do not apply operators that would add a proposition from "exclude").
@@ -100,7 +100,7 @@ bool LandmarkFactory::relaxed_task_solvable(vector<vector<int> > &lvl_var,
         lvl_op.resize(g_operators.size() + g_axioms.size());
         for (size_t i = 0; i < g_operators.size() + g_axioms.size(); ++i) {
             const Operator &op = lm_graph->get_operator_for_lookup_index(i);
-            lvl_op[i] = hash_map<pair<int, int>, int, hash_int_pair> ();
+            lvl_op[i] = hash_map<pair<int, int>, int, std::hash<pair<int, int>>> ();
             const vector<Effect> &effects = op.get_effects();
             for (size_t j = 0; j < effects.size(); ++j)
                 lvl_op[i].insert(make_pair(make_pair(effects[j].var,
@@ -148,7 +148,7 @@ bool LandmarkFactory::is_causal_landmark(const LandmarkNode &landmark) const {
     if (landmark.in_goal)
         return true;
     vector<vector<int> > lvl_var;
-    vector<hash_map<pair<int, int>, int, hash_int_pair> > lvl_op;
+    vector<hash_map<pair<int, int>, int, std::hash<pair<int, int>>> > lvl_op;
     // Initialize lvl_var to numeric_limits<int>::max()
     lvl_var.resize(g_variable_name.size());
     for (size_t var = 0; var < g_variable_name.size(); ++var) {
@@ -428,13 +428,13 @@ void LandmarkFactory::approximate_reasonable_orders(bool obedient_orders) {
         } else {
             // Collect candidates for reasonable orders in "interesting nodes".
             // Use hash set to filter duplicates.
-            hash_set<LandmarkNode *, hash_pointer> interesting_nodes(
+            hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> interesting_nodes(
                 g_variable_name.size());
-            for (hash_map<LandmarkNode *, edge_type, hash_pointer>::iterator it =
+            for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::iterator it =
                      node_p->children.begin(); it != node_p->children.end(); ++it) {
                 if (it->second >= greedy_necessary) { // found node2: node_p ->_gn node2
                     LandmarkNode &node2 = *(it->first);
-                    for (hash_map<LandmarkNode *, edge_type, hash_pointer>::iterator
+                    for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::iterator
                          it2 = node2.parents.begin(); it2
                          != node2.parents.end(); ++it2) {   // find parent
                         edge_type &edge = it2->second;
@@ -453,7 +453,7 @@ void LandmarkFactory::approximate_reasonable_orders(bool obedient_orders) {
             }
             // Insert reasonable orders between those members of "interesting nodes" that interfere
             // with node_p.
-            for (hash_set<LandmarkNode *, hash_pointer>::iterator it3 =
+            for (hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>>::iterator it3 =
                      interesting_nodes.begin(); it3 != interesting_nodes.end(); ++it3) {
                 if (*it3 == node_p || (*it3)->disjunctive)
                     continue;
@@ -469,14 +469,14 @@ void LandmarkFactory::approximate_reasonable_orders(bool obedient_orders) {
 }
 
 void LandmarkFactory::collect_ancestors(
-    hash_set<LandmarkNode *, hash_pointer> &result, LandmarkNode &node,
+    hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> &result, LandmarkNode &node,
     bool use_reasonable) {
     /* Returns all ancestors in the landmark graph of landmark node "start" */
 
     // There could be cycles if use_reasonable == true
     list<LandmarkNode *> open_nodes;
-    hash_set<LandmarkNode *, hash_pointer> closed_nodes;
-    for (hash_map<LandmarkNode *, edge_type, hash_pointer>::iterator it =
+    hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> closed_nodes;
+    for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::iterator it =
              node.parents.begin(); it != node.parents.end(); ++it) {
         edge_type &edge = it->second;
         LandmarkNode &parent = *(it->first);
@@ -490,7 +490,7 @@ void LandmarkFactory::collect_ancestors(
     }
     while (!open_nodes.empty()) {
         LandmarkNode &node2 = *(open_nodes.front());
-        for (hash_map<LandmarkNode *, edge_type, hash_pointer>::iterator it =
+        for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::iterator it =
                  node2.parents.begin(); it != node2.parents.end(); ++it) {
             edge_type &edge = it->second;
             LandmarkNode &parent = *(it->first);
@@ -633,7 +633,7 @@ void LandmarkFactory::discard_all_orderings() {
 }
 
 void LandmarkFactory::mk_acyclic_graph() {
-    hash_set<LandmarkNode *, hash_pointer> acyclic_node_set(lm_graph->number_of_landmarks());
+    hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> acyclic_node_set(lm_graph->number_of_landmarks());
     int removed_edges = 0;
     for (set<LandmarkNode *>::iterator it = lm_graph->get_nodes().begin(); it != lm_graph->get_nodes().end(); ++it) {
         LandmarkNode &lmn = **it;
@@ -679,12 +679,12 @@ bool LandmarkFactory::remove_first_weakest_cycle_edge(LandmarkNode *cur,
 }
 
 int LandmarkFactory::loop_acyclic_graph(LandmarkNode &lmn, hash_set<
-                                            LandmarkNode *, hash_pointer> &acyclic_node_set) {
+                                            LandmarkNode *, utils::Hash<LandmarkNode *>> &acyclic_node_set) {
     assert(acyclic_node_set.find(&lmn) == acyclic_node_set.end());
     int nr_removed = 0;
     list<pair<LandmarkNode *, edge_type> > path;
-    hash_set<LandmarkNode *, hash_pointer> visited = hash_set<LandmarkNode *,
-                                                              hash_pointer> (lm_graph->number_of_landmarks());
+    hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> visited = hash_set<LandmarkNode *,
+                                                              utils::Hash<LandmarkNode *>> (lm_graph->number_of_landmarks());
     LandmarkNode *cur = &lmn;
     while (true) {
         assert(acyclic_node_set.find(cur) == acyclic_node_set.end());
@@ -708,7 +708,7 @@ int LandmarkFactory::loop_acyclic_graph(LandmarkNode &lmn, hash_set<
         }
         visited.insert(cur);
         bool empty = true;
-        for (hash_map<LandmarkNode *, edge_type, hash_pointer>::const_iterator
+        for (hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>>::const_iterator
              it = cur->children.begin(); it != cur->children.end(); ++it) {
             edge_type edge = it->second;
             LandmarkNode *child_p = it->first;
@@ -748,7 +748,7 @@ int LandmarkFactory::calculate_lms_cost() const {
 void LandmarkFactory::compute_predecessor_information(
     LandmarkNode *bp,
     vector<vector<int> > &lvl_var, vector<hash_map<pair<int, int>, int,
-                                                   hash_int_pair> > &lvl_op) {
+                                                   std::hash<pair<int, int>>> > &lvl_op) {
     /* Collect information at what time step propositions can be reached
     (in lvl_var) in a relaxed plan that excludes bp, and similarly
     when operators can be applied (in lvl_op).  */
@@ -771,7 +771,7 @@ void LandmarkFactory::calc_achievers() {
         }
 
         vector<vector<int> > lvl_var;
-        vector<hash_map<pair<int, int>, int, hash_int_pair> > lvl_op;
+        vector<hash_map<pair<int, int>, int, std::hash<pair<int, int>>> > lvl_op;
         compute_predecessor_information(&lmn, lvl_var, lvl_op);
 
         set<int>::iterator ach_it;
