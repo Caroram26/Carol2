@@ -2,12 +2,9 @@
 #ifdef OPEN_LISTS_ALTERNATION_OPEN_LIST_H
 
 #include "../option_parser.h"
-#include "../utils/system.h"
 
 #include <cassert>
 #include <cstdlib>
-
-
 using namespace std;
 
 
@@ -86,7 +83,7 @@ Entry AlternationOpenList<Entry>::remove_min(vector<int> *key) {
     assert(size > 0);
     if (key) {
         cerr << "not implemented -- see msg639 in the tracker" << endl;
-        exit_with(utils::ExitCode::UNSUPPORTED);
+        exit_with(EXIT_UNSUPPORTED);
     }
     int best = -1;
     for (size_t i = 0; i < open_lists.size(); ++i) {

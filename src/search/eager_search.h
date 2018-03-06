@@ -8,6 +8,7 @@
 #include "search_engine.h"
 #include "search_progress.h"
 #include "search_space.h"
+#include "timer.h"
 
 #include "open_lists/open_list.h"
 

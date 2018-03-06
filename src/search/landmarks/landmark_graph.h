@@ -13,7 +13,6 @@
 #include "landmark_types.h"
 #include "../operator.h"
 #include "../option_parser.h"
-#include "../utils/hash.h"
 
 enum edge_type {
     /* NOTE: The code relies on the fact that larger numbers are
@@ -45,8 +44,8 @@ public:
     std::vector<int> vals;
     bool disjunctive;
     bool conjunctive;
-    __gnu_cxx::hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>> parents;
-    __gnu_cxx::hash_map<LandmarkNode *, edge_type, utils::Hash<LandmarkNode *>> children;
+    __gnu_cxx::hash_map<LandmarkNode *, edge_type, hash_pointer> parents;
+    __gnu_cxx::hash_map<LandmarkNode *, edge_type, hash_pointer> children;
     bool in_goal;
     int min_cost; // minimal cost of achieving operators
     double shared_cost;
@@ -54,7 +53,7 @@ public:
     landmark_status status;
     bool is_derived;
 
-    __gnu_cxx::hash_set<std::pair<int, int>, std::hash<std::pair<int, int>>> forward_orders;
+    __gnu_cxx::hash_set<std::pair<int, int>, hash_int_pair> forward_orders;
     std::set<int> first_achievers;
     std::set<int> possible_achievers;
 
@@ -119,7 +118,7 @@ struct LandmarkNodeComparer {
 };
 
 
-typedef __gnu_cxx::hash_set<LandmarkNode *, utils::Hash<LandmarkNode *>> LandmarkSet;
+typedef __gnu_cxx::hash_set<LandmarkNode *, hash_pointer> LandmarkSet;
 
 class LandmarkGraph {
 public:
@@ -228,8 +227,8 @@ private:
     int reached_cost;
     int needed_cost;
     int landmarks_cost;
-    __gnu_cxx::hash_map<std::pair<int, int>, LandmarkNode *, std::hash<std::pair<int, int>>> simple_lms_to_nodes;
-    __gnu_cxx::hash_map<std::pair<int, int>, LandmarkNode *, std::hash<std::pair<int, int>>> disj_lms_to_nodes;
+    __gnu_cxx::hash_map<std::pair<int, int>, LandmarkNode *, hash_int_pair> simple_lms_to_nodes;
+    __gnu_cxx::hash_map<std::pair<int, int>, LandmarkNode *, hash_int_pair> disj_lms_to_nodes;
     std::set<LandmarkNode *> nodes;
     std::vector<LandmarkNode *> ordered_nodes;
     std::vector<std::vector<std::vector<int> > > operators_eff_lookup;

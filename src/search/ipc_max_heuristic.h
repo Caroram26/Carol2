@@ -19,7 +19,7 @@ protected:
 public:
     IPCMaxHeuristic(const Options &options);
     ~IPCMaxHeuristic();
-    virtual bool reach_state(const State &parent_state, OperatorID op,
+    virtual bool reach_state(const State &parent_state, const Operator &op,
                              const State &state);
 };
 

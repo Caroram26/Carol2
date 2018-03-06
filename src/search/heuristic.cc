@@ -36,9 +36,9 @@ Heuristic::Heuristic(const Options &opts)
 Heuristic::~Heuristic() {
 }
 
-void Heuristic::set_preferred(OperatorID op) {
-    if (!g_operators[op].is_marked()) {
-        g_operators[op].mark();
+void Heuristic::set_preferred(const Operator *op) {
+    if (!op->is_marked()) {
+        op->mark();
         preferred_operators.push_back(op);
     }
 }
@@ -49,7 +49,7 @@ void Heuristic::evaluate(const State &state) {
     preferred_operators.clear();
     heuristic = compute_heuristic(state);
     for (size_t i = 0; i < preferred_operators.size(); ++i)
-        g_operators[preferred_operators[i]].unmark();
+        preferred_operators[i]->unmark();
     assert(heuristic == DEAD_END || heuristic >= 0);
 
     if (heuristic == DEAD_END) {
@@ -63,7 +63,7 @@ void Heuristic::evaluate(const State &state) {
 #ifndef NDEBUG
     if (heuristic != DEAD_END) {
         for (size_t i = 0; i < preferred_operators.size(); ++i)
-            assert(g_operators[preferred_operators[i]].is_applicable(state));
+            assert(preferred_operators[i]->is_applicable(state));
     }
 #endif
     evaluator_value = heuristic;
@@ -97,7 +97,7 @@ int Heuristic::get_heuristic() {
     return heuristic;
 }
 
-void Heuristic::get_preferred_operators(std::vector<OperatorID> &result) {
+void Heuristic::get_preferred_operators(std::vector<const Operator *> &result) {
     assert(heuristic >= 0);
     result.insert(result.end(),
                   preferred_operators.begin(),
@@ -105,7 +105,7 @@ void Heuristic::get_preferred_operators(std::vector<OperatorID> &result) {
 }
 
 bool Heuristic::reach_state(const State & /*parent_state*/,
-                            OperatorID  /*op*/, const State & /*state*/) {
+                            const Operator & /*op*/, const State & /*state*/) {
     return false;
 }
 
@@ -125,10 +125,6 @@ bool Heuristic::dead_end_is_reliable() const {
 
 void Heuristic::set_evaluator_value(int val) {
     evaluator_value = val;
-}
-
-int Heuristic::get_adjusted_cost(OperatorID op) const {
-    return get_adjusted_action_cost(g_operators[op], cost_type);
 }
 
 int Heuristic::get_adjusted_cost(const Operator &op) const {
