@@ -51,4 +51,4 @@ Description portfolio including decoupled search as a main component
 Authors     Daniel Gnad <gnad@cs.uni-saarland.de> and Alexander Shleyfman <shleyfman.alexander@gmail.com> and Joerg Hoffmann <hoffmann@cs.uni-saarland.de>
 SupportsDerivedPredicates no
 SupportsQuantifiedPreconditions no
-SupportsQuantifiedEffects no
+SupportsQuantifiedEffects yes
