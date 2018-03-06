@@ -1,26 +1,19 @@
-#ifndef EQUIVALENCE_RELATION_H
-#define EQUIVALENCE_RELATION_H
+#ifndef ALGORITHMS_EQUIVALENCE_RELATION_H
+#define ALGORITHMS_EQUIVALENCE_RELATION_H
 
 #include <algorithm>
 #include <cmath>
-#include <ext/hash_map>
 #include <list>
+#include <unordered_map>
 #include <vector>
 
+namespace equivalence_relation {
 class Block;
 typedef std::list<int>::iterator ElementListIter;
 typedef std::list<int>::const_iterator ElementListConstIter;
 typedef std::list<Block>::iterator BlockListIter;
 typedef std::list<Block>::const_iterator BlockListConstIter;
 class EquivalenceRelation;
-
-struct DoubleEpsilonEquality {
-    bool operator()(const double &d1, const double &d2) {
-        // TODO avoid code duplication with landmark count heuristic
-        static const double epsilon = 0.01;
-        return abs(d1 - d2) < epsilon;
-    }
-};
 
 class Block {
     std::list<int> elements;
@@ -53,7 +46,7 @@ class EquivalenceRelation {
       block and points to the element within it.
     */
     typedef std::pair<BlockListIter, ElementListIter> ElementPosition;
-    typedef __gnu_cxx::hash_map<int, ElementPosition> ElementPositionMap;
+    typedef std::unordered_map<int, ElementPosition> ElementPositionMap;
     ElementPositionMap element_positions;
 
     /*
@@ -90,6 +83,9 @@ public:
     */
     void refine(const EquivalenceRelation &other);
 
+    // See refine(const Block &block)
+    void refine(ElementListConstIter block_X_begin, ElementListConstIter block_X_end);
+
     /*
       Creates an equivalence relation over the numbers 0 to n -1.
       The vector annotated_elements cointains pairs (A, e) where A is an arbitrary
@@ -110,22 +106,22 @@ public:
     template<class T>
     static EquivalenceRelation *from_annotated_elements(
         int n,
-        std::vector<std::pair<T, int> > &annotated_elements);
+        std::vector<std::pair<T, int>> &annotated_elements);
     template<class T, class Equal>
     static EquivalenceRelation *from_annotated_elements(
         int n,
-        std::vector<std::pair<T, int> > &annotated_elements);
+        std::vector<std::pair<T, int>> &annotated_elements);
 };
 
 template<class T>
 EquivalenceRelation *EquivalenceRelation::from_annotated_elements(int n,
-                                                                  std::vector<std::pair<T, int> > &annotated_elements) {
-    return EquivalenceRelation::from_annotated_elements<T, std::equal_to<T> >(n, annotated_elements);
+                                                                  std::vector<std::pair<T, int>> &annotated_elements) {
+    return EquivalenceRelation::from_annotated_elements<T, std::equal_to<T>>(n, annotated_elements);
 }
 
 template<class T, class Equal>
 EquivalenceRelation *EquivalenceRelation::from_annotated_elements(int n,
-                                                                  std::vector<std::pair<T, int> > &annotated_elements) {
+                                                                  std::vector<std::pair<T, int>> &annotated_elements) {
     EquivalenceRelation *relation = new EquivalenceRelation(n);
     if (!annotated_elements.empty()) {
         sort(annotated_elements.begin(), annotated_elements.end());
@@ -144,6 +140,7 @@ EquivalenceRelation *EquivalenceRelation::from_annotated_elements(int n,
         }
     }
     return relation;
+}
 }
 
 #endif

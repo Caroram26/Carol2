@@ -1,17 +1,34 @@
 #include "causal_graph.h"
 
-#include "globals.h"
-#include "operator.h"
-#include "utilities.h"
+#include "../globals.h"
+#include "../operator.h"
+
+#include "../utils/logging.h"
+#include "../utils/memory.h"
+#include "../utils/timer.h"
 
 #include <algorithm>
 #include <cassert>
 #include <iostream>
-#include <tr1/unordered_set>
+#include <unordered_set>
 
 using namespace std;
-using namespace std::tr1;
 
+/*
+  We only want to create one causal graph per task, so they are cached globally.
+
+  TODO: We need to rethink the memory management here. Objects in this cache are
+  never reclaimed (before termination of the program). Also, currently every
+  heuristic that uses one would receive its own causal graph object even if it
+  uses an unmodified task because it will create its own copy of
+  CostAdaptedTask.
+  We have the same problems for other objects that are associated with tasks
+  (causal graphs, successor generators and axiom evlauators, DTGs, ...) and can
+  maybe deal with all of them in the same way.
+*/
+
+namespace causal_graph {
+static unique_ptr<CausalGraph> causal_graph;
 
 /*
   An IntRelationBuilder constructs an IntRelation by adding one pair
@@ -114,51 +131,45 @@ struct CausalGraphBuilder {
     }
 
     void handle_operator(const Operator &op) {
-        const vector<Condition> &preconditions = op.get_preconditions();
         const vector<Effect> &effects = op.get_effects();
 
-        // Handle pre->eff links from prevail conditions.
-        for (size_t i = 0; i < preconditions.size(); ++i) {
-            int pre_var = preconditions[i].var;
-            for (size_t j = 0; j < effects.size(); ++j) {
-                int eff_var = effects[j].var;
-                if (pre_var != eff_var)
-                    handle_pre_eff_arc(pre_var, eff_var);
+        // Handle pre->eff links from preconditions.
+        for (const Condition &pre : op.get_preconditions()) {
+            for (const Effect &eff : effects) {
+                if (pre.var != eff.var)
+                    handle_pre_eff_arc(pre.var, eff.var);
             }
         }
 
         // Handle pre->eff links from effect conditions.
-        for (size_t i = 0; i < effects.size(); ++i) {
-            int eff_var = effects[i].var;
-            const vector<Condition> &conditions = effects[i].conditions;
-            for (size_t j = 0; j < conditions.size(); ++j) {
-                int pre_var = conditions[j].var;
-                if (pre_var != eff_var)
-                    handle_pre_eff_arc(pre_var, eff_var);
+        for (const Effect &eff : effects) {
+            for (const Condition &pre : eff.conditions) {
+                if (pre.var != eff.var)
+                    handle_pre_eff_arc(pre.var, eff.var);
             }
         }
 
         // Handle eff->eff links.
-        for (size_t i = 0; i < effects.size(); ++i) {
-            int eff1_var = effects[i].var;
-            for (size_t j = i + 1; j < effects.size(); ++j) {
-                int eff2_var = effects[j].var;
-                if (eff1_var != eff2_var)
-                    handle_eff_eff_edge(eff1_var, eff2_var);
+        for (const Effect &eff1 : effects) {
+            for (const Effect &eff2 : effects) {
+                if (eff1.var != eff2.var)
+                    handle_eff_eff_edge(eff1.var, eff2.var);
             }
         }
     }
 };
 
-
 CausalGraph::CausalGraph() {
-    CausalGraphBuilder cg_builder(g_variable_domain.size());
+    utils::Timer timer;
+    cout << "building causal graph..." << flush;
+    int num_variables = g_variable_domain.size();
+    CausalGraphBuilder cg_builder(num_variables);
 
-    for (size_t i = 0; i < g_operators.size(); ++i)
-        cg_builder.handle_operator(g_operators[i]);
+    for (const Operator &op : g_operators)
+        cg_builder.handle_operator(op);
 
-    for (size_t i = 0; i < g_axioms.size(); ++i)
-        cg_builder.handle_operator(g_axioms[i]);
+    for (const Operator &op : g_axioms)
+        cg_builder.handle_operator(op);
 
     cg_builder.pre_eff_builder.compute_relation(pre_to_eff);
     cg_builder.eff_pre_builder.compute_relation(eff_to_pre);
@@ -167,21 +178,26 @@ CausalGraph::CausalGraph() {
     cg_builder.pred_builder.compute_relation(predecessors);
     cg_builder.succ_builder.compute_relation(successors);
 
-    // dump();
+    // dump(task_proxy);
+    cout << "done! [t=" << timer << "]" << endl;
 }
-
-
-CausalGraph::~CausalGraph() {
-}
-
 
 void CausalGraph::dump() const {
     cout << "Causal graph: " << endl;
-    for (size_t var = 0; var < g_variable_domain.size(); ++var)
-        cout << "#" << var << " [" << g_variable_name[var] << "]:" << endl
+    for (size_t var = 0; var < g_variable_domain.size(); ++var) {
+        cout << "#" << var << " [" << g_variable_name[var][0] << "]:" << endl
              << "    pre->eff arcs: " << pre_to_eff[var] << endl
              << "    eff->pre arcs: " << eff_to_pre[var] << endl
              << "    eff->eff arcs: " << eff_to_eff[var] << endl
              << "    successors: " << successors[var] << endl
              << "    predecessors: " << predecessors[var] << endl;
+    }
+}
+
+const CausalGraph &get_causal_graph() {
+    if (!causal_graph) {
+        causal_graph = utils::make_unique_ptr<CausalGraph>();
+    }
+    return *causal_graph;
+}
 }
