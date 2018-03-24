@@ -40,7 +40,7 @@ From: ubuntu
         --plan-file $PLANFILE \
         --portfolio /planner/src/driver/portfolios/seq_agl_ds.py \
         $DOMAINFILE \
-        $PROBLEMFILE
+        $PROBLEMFILE \
         --preprocess-options --h2-time-limit 10
 
 ## Update the following fields with meta data about your submission.
