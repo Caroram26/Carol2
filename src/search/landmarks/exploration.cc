@@ -71,7 +71,7 @@ Exploration::Exploration(const Options &opts)
 Exploration::~Exploration() {
 }
 
-void Exploration::increase_cost(int &cost, int amount) {
+void Exploration::increase_cost(long long &cost, long long amount) {
     assert(cost >= 0);
     assert(amount >= 0);
     cost += amount;
@@ -218,11 +218,11 @@ void Exploration::setup_exploration_queue(const State &state,
 void Exploration::relaxed_exploration(bool use_h_max = false, bool level_out = false) {
     int unsolved_goals = termination_propositions.size();
     while (!prop_queue.empty()) {
-        pair<int, ExProposition *> top_pair = prop_queue.pop();
-        int distance = top_pair.first;
+        pair<long long, ExProposition *> top_pair = prop_queue.pop();
+        long long distance = top_pair.first;
         ExProposition *prop = top_pair.second;
 
-        int prop_cost;
+        long long prop_cost;
         if (use_h_max)
             prop_cost = prop->h_max_cost;
         else
@@ -239,7 +239,7 @@ void Exploration::relaxed_exploration(bool use_h_max = false, bool level_out = f
                 continue;
             --unary_op->unsatisfied_preconditions;
             increase_cost(unary_op->h_add_cost, prop_cost);
-            unary_op->h_max_cost = max(prop_cost + unary_op->base_cost,
+            unary_op->h_max_cost = max<long long>(prop_cost + unary_op->base_cost,
                                        unary_op->h_max_cost);
             unary_op->depth = max(unary_op->depth, prop->depth);
             assert(unary_op->unsatisfied_preconditions >= 0);
@@ -256,7 +256,7 @@ void Exploration::relaxed_exploration(bool use_h_max = false, bool level_out = f
     }
 }
 
-void Exploration::enqueue_if_necessary(ExProposition *prop, int cost, int depth,
+void Exploration::enqueue_if_necessary(ExProposition *prop, long long cost, int depth,
                                        ExUnaryOperator *op,
                                        bool use_h_max) {
     assert(cost >= 0);
@@ -280,8 +280,8 @@ void Exploration::enqueue_if_necessary(ExProposition *prop, int cost, int depth,
 }
 
 
-int Exploration::compute_hsp_add_heuristic() {
-    int total_cost = 0;
+long long Exploration::compute_hsp_add_heuristic() {
+    long long total_cost = 0;
     for (size_t i = 0; i < goal_propositions.size(); ++i) {
         int prop_cost = goal_propositions[i]->h_add_cost;
         if (prop_cost == -1)
@@ -293,7 +293,7 @@ int Exploration::compute_hsp_add_heuristic() {
 
 
 int Exploration::compute_ff_heuristic(const State &state) {
-    int h_add_heuristic = compute_hsp_add_heuristic();
+    long long h_add_heuristic = compute_hsp_add_heuristic();
     if (h_add_heuristic == DEAD_END) {
         return DEAD_END;
     } else {
@@ -448,10 +448,10 @@ bool Exploration::plan_for_disj(vector<pair<int, int> > &landmarks,
         if (heuristic_recomputation_needed) {
             prepare_heuristic_computation(state);
         }
-        int min_cost = numeric_limits<int>::max();
+        long long min_cost = numeric_limits<long long>::max();
         ExProposition *target = NULL;
         for (size_t i = 0; i < termination_propositions.size(); ++i) {
-            const int prop_cost = termination_propositions[i]->h_add_cost;
+            const long long prop_cost = termination_propositions[i]->h_add_cost;
             if (prop_cost == -1 && is_landmark(landmarks, termination_propositions[i]->var,
                                                termination_propositions[i]->val)) {
                 return false; // dead end

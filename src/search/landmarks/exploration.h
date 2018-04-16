@@ -24,7 +24,7 @@ struct ExProposition {
     bool is_termination_condition;
     std::vector<ExUnaryOperator *> precondition_of;
 
-    int h_add_cost;
+    long long h_add_cost;
     int h_max_cost;
     int depth;
     bool marked; // used when computing preferred operators
@@ -51,7 +51,7 @@ struct ExUnaryOperator {
     int base_cost; // 0 for axioms, 1 for regular operators
 
     int unsatisfied_preconditions;
-    int h_add_cost;
+    long long h_add_cost;
     int h_max_cost;
     int depth;
     ExUnaryOperator(const std::vector<ExProposition *> &pre, ExProposition *eff,
@@ -85,7 +85,7 @@ struct ex_hash_operator_ptr {
 };
 
 class Exploration : public Heuristic {
-    static const int MAX_COST_VALUE = 100000000; // See additive_heuristic.h.
+    static const long long MAX_COST_VALUE = 100000000000000000ll; // See additive_heuristic.h.
 
     typedef __gnu_cxx::hash_set<const Operator *, ex_hash_operator_ptr> RelaxedPlan;
     RelaxedPlan relaxed_plan;
@@ -94,7 +94,7 @@ class Exploration : public Heuristic {
     std::vector<ExProposition *> goal_propositions;
     std::vector<ExProposition *> termination_propositions;
 
-    AdaptiveQueue<ExProposition *> prop_queue;
+    AdaptiveQueue<ExProposition *, long long> prop_queue;
     bool did_write_overflow_warning;
 
     bool heuristic_recomputation_needed;
@@ -116,14 +116,14 @@ class Exploration : public Heuristic {
     void prepare_heuristic_computation(const State &state, bool h_max);
     void collect_relaxed_plan(ExProposition *goal, RelaxedPlan &relaxed_plan, const State &state);
 
-    int compute_hsp_add_heuristic();
+    long long compute_hsp_add_heuristic();
     int compute_ff_heuristic(const State &state);
 
     void collect_ha(ExProposition *goal, RelaxedPlan &relaxed_plan, const State &state);
 
-    void enqueue_if_necessary(ExProposition *prop, int cost, int depth, ExUnaryOperator *op,
+    void enqueue_if_necessary(ExProposition *prop, long long cost, int depth, ExUnaryOperator *op,
                               bool use_h_max);
-    void increase_cost(int &cost, int amount);
+    void increase_cost(long long &cost, long long amount);
     void write_overflow_warning();
 protected:
     virtual int compute_heuristic(const State &state);
