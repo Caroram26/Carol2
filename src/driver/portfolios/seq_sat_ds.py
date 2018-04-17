@@ -44,4 +44,4 @@ FINAL_CONFIG = [
                      ],repeat_last=true,continue_on_fail=true, bound=BOUND)"""                     
 ]
 
-MEMORY = 7850000000 # close to 8Gb
+MEMORY = 8000000000 # leave some safety margin

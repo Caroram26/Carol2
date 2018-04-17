@@ -303,7 +303,7 @@ void FrontierPrices::goal_price_propagation() {
         // should work better but requires some implementation
         // effort. Probably worth it to reduce overhead
         // Alvaro: Use a heap_queue?
-        HeapQueue<LeafStateHash, compare_pair_first_greater<LeafStateHash> > open;
+        HeapQueue<LeafStateHash, int, compare_pair_first_greater<LeafStateHash> > open;
         
         for (LeafStateHash s : leaf_goal_states[factor]) {
             open.push(goal_cost[factor], s);
