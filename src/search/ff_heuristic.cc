@@ -128,7 +128,7 @@ int FFHeuristic::compute_heuristic(const State &state) {
         setup_exploration_queue_decoupled_leaf_states(state);
     }
     
-    int h_add = compute_add_and_ff(state);
+    long long h_add = compute_add_and_ff(state);
     if (h_add == DEAD_END)
         return h_add;
 

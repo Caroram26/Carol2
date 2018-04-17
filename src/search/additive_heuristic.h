@@ -13,9 +13,9 @@ class AdditiveHeuristic : public RelaxationHeuristic {
        weighted A* with a weight of 10 will have f values comfortably
        below the signed 32-bit int upper bound.
      */
-    static const int MAX_COST_VALUE = 100000000;
+    static const long long MAX_COST_VALUE = 100000000000000000ll;
 
-    AdaptiveQueue<Proposition *> queue;
+    AdaptiveQueue<Proposition *, long long> queue;
     bool did_write_overflow_warning;
 
     void setup_exploration_queue_decoupled_leaf_states(const State &state);
@@ -23,7 +23,7 @@ class AdditiveHeuristic : public RelaxationHeuristic {
     void relaxed_exploration();
     void mark_preferred_operators(const State &state, Proposition *goal);
 
-    void increase_cost(int &cost, int amount) {
+    void increase_cost(long long &cost, long long amount) {
         assert(cost >= 0);
         assert(amount >= 0);
         cost += amount;
@@ -38,7 +38,7 @@ protected:
     virtual void initialize();
     virtual int compute_heuristic(const State &state);
     
-    void enqueue_if_necessary(Proposition *prop, int cost, UnaryOperator *op) {
+    void enqueue_if_necessary(Proposition *prop, long long cost, UnaryOperator *op) {
         assert(cost >= 0);
         if (prop->cost == -1 || prop->cost > cost) {
             prop->cost = cost;
@@ -51,7 +51,7 @@ protected:
     void setup_exploration_queue();
 
     // Common part of h^add and h^ff computation.
-    int compute_add_and_ff(const State &state);
+    long long compute_add_and_ff(const State &state);
 public:
     AdditiveHeuristic(const Options &options);
     ~AdditiveHeuristic();

@@ -348,8 +348,8 @@ def run(portfolio, executable, sas_file, plan_manager, args):
         
     print("Internal memory limit: %s" % memory)
 
-    remaining_time_at_start = float(timeout) - get_elapsed_time()
-    print("remaining time at start: %.2f" % remaining_time_at_start)
+    remaining_time_at_start = float(timeout)
+    print("remaining time at start: %.2f" % (remaining_time_at_start - get_elapsed_time()))
 
     if optimal:
         exitcodes = run_opt(configs, executable, sas_file, plan_manager,

@@ -31,4 +31,4 @@ CONFIGS = [
            "astar(blind)"])
      ]
 
-MEMORY = 7850000000 # close to 8Gb
+MEMORY = 8000000000 # leave some safety margin
